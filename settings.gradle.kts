@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Butter for Spotify"
 include(":app")
- 
+include(":data")

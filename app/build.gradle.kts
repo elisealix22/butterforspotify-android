@@ -1,8 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -26,6 +26,7 @@ android {
         debug {
             isMinifyEnabled = false
             isDebuggable = true
+            applicationIdSuffix = ".debug"
         }
         release {
             isMinifyEnabled = true
@@ -50,6 +51,10 @@ android {
 }
 
 dependencies {
+    // Modules
+    implementation(project(":data"))
+
+    // Libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

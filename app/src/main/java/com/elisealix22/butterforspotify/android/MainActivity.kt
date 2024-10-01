@@ -1,5 +1,7 @@
 package com.elisealix22.butterforspotify.android
 
+import android.app.ActivityOptions
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,11 +24,24 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.elisealix22.butterforspotify.android.navigation.BottomNavigationTabs
 import com.elisealix22.butterforspotify.android.navigation.ButterRoute
+import com.elisealix22.butterforspotify.android.signin.SignInActivity
 import com.elisealix22.butterforspotify.android.ui.theme.ButterForSpotifyTheme
+import com.elisealix22.butterforspotify.data.auth.AuthStore
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (AuthStore.blockingActiveUserToken.isNullOrBlank()) {
+            startActivity(
+                Intent(this, SignInActivity::class.java),
+                ActivityOptions.makeCustomAnimation(this, 0, 0).toBundle()
+            )
+            finish()
+            return
+        }
+
         setContent {
             ButterForSpotifyTheme {
                 val navController = rememberNavController()

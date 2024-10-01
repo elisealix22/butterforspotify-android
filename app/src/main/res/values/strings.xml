@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Butter for Spotify</string>
 
+    <!-- Sign in -->
+    <string name="sign_in">Sign in</string>
+
     <!-- Navigation -->
     <string name="music_tab">Music</string>
     <string name="profile_tab">Profile</string>
