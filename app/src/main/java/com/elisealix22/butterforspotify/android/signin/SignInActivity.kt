@@ -1,7 +1,5 @@
 package com.elisealix22.butterforspotify.android.signin
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,7 +12,9 @@ class SignInActivity: ComponentActivity() {
         setContent {
             ButterForSpotifyTheme {
                 SignInScreen(
-                    onSignInClick = {}
+                    onSignInClick = {
+
+                    }
                 )
             }
         }

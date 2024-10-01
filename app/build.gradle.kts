@@ -54,7 +54,7 @@ dependencies {
     // Modules
     implementation(project(":data"))
 
-    // Libraries
+    // Android libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -65,6 +65,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation)
     implementation(libs.kotlinx.serialization)
+
+    // External libraries
+    implementation(libs.spotify.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
