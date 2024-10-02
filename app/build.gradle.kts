@@ -1,16 +1,16 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "com.elisealix22.butterforspotify.android"
+    namespace = "com.elisealix22.butterforspotify"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.elisealix22.butterforspotify.android"
+        applicationId = "com.elisealix22.butterforspotify"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -26,6 +26,7 @@ android {
         debug {
             isMinifyEnabled = false
             isDebuggable = true
+            applicationIdSuffix = ".debug"
         }
         release {
             isMinifyEnabled = true
@@ -50,6 +51,10 @@ android {
 }
 
 dependencies {
+    // Modules
+    implementation(project(":data"))
+
+    // Android libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -60,6 +65,9 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation)
     implementation(libs.kotlinx.serialization)
+
+    // External libraries
+    implementation(libs.spotify.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

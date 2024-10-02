@@ -1,7 +1,7 @@
-package com.elisealix22.butterforspotify.android.navigation
+package com.elisealix22.butterforspotify.navigation
 
 import androidx.annotation.StringRes
-import com.elisealix22.butterforspotify.android.R
+import com.elisealix22.butterforspotify.R
 
 data class BottomNavigationTab(@StringRes val name: Int, val route: ButterRoute)
 
