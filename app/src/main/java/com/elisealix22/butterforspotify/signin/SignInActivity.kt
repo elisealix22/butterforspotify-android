@@ -1,9 +1,9 @@
-package com.elisealix22.butterforspotify.android.signin
+package com.elisealix22.butterforspotify.signin
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.elisealix22.butterforspotify.android.ui.theme.ButterForSpotifyTheme
+import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 
 class SignInActivity: ComponentActivity() {
 

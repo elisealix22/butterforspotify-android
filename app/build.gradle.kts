@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.elisealix22.butterforspotify.android"
+    namespace = "com.elisealix22.butterforspotify"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.elisealix22.butterforspotify.android"
+        applicationId = "com.elisealix22.butterforspotify"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.elisealix22.butterforspotify.android
+package com.elisealix22.butterforspotify
 
 import android.app.Application
 import com.elisealix22.butterforspotify.data.auth.AuthStore

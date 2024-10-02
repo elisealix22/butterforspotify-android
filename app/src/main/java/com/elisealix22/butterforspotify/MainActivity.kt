@@ -1,4 +1,4 @@
-package com.elisealix22.butterforspotify.android
+package com.elisealix22.butterforspotify
 
 import android.app.ActivityOptions
 import android.content.Intent
@@ -22,10 +22,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.elisealix22.butterforspotify.android.navigation.BottomNavigationTabs
-import com.elisealix22.butterforspotify.android.navigation.ButterRoute
-import com.elisealix22.butterforspotify.android.signin.SignInActivity
-import com.elisealix22.butterforspotify.android.ui.theme.ButterForSpotifyTheme
+import com.elisealix22.butterforspotify.navigation.BottomNavigationTabs
+import com.elisealix22.butterforspotify.navigation.ButterRoute
+import com.elisealix22.butterforspotify.signin.SignInActivity
+import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.data.auth.AuthStore
 
 class MainActivity : ComponentActivity() {

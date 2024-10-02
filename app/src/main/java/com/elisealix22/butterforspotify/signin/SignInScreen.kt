@@ -1,4 +1,4 @@
-package com.elisealix22.butterforspotify.android.signin
+package com.elisealix22.butterforspotify.signin
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.elisealix22.butterforspotify.android.R
-import com.elisealix22.butterforspotify.android.ui.theme.ButterForSpotifyTheme
+import com.elisealix22.butterforspotify.R
+import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 
 @Composable
 fun SignInScreen(

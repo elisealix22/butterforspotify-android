@@ -1,4 +1,4 @@
-package com.elisealix22.butterforspotify.android.ui.theme
+package com.elisealix22.butterforspotify.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

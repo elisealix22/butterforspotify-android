@@ -1,4 +1,4 @@
-package com.elisealix22.butterforspotify.android
+package com.elisealix22.butterforspotify
 
 import org.junit.Test
 

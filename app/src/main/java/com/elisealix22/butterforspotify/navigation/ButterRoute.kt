@@ -1,4 +1,4 @@
-package com.elisealix22.butterforspotify.android.navigation
+package com.elisealix22.butterforspotify.navigation
 
 import kotlinx.serialization.Serializable
 
