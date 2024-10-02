@@ -6,9 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
 object AuthStore {
@@ -29,13 +27,7 @@ object AuthStore {
         }
     }
 
-    val activeUserToken: Flow<String?>
-        get() = applicationContext.authStore.data
-            .map { preferences ->
-                preferences[ACTIVE_USER_TOKEN]
-            }
-
-    val blockingActiveUserToken: String?
+    val activeUserToken: String?
         get() = runBlocking {
             applicationContext.authStore.data.firstOrNull()
         }?.get(ACTIVE_USER_TOKEN)
