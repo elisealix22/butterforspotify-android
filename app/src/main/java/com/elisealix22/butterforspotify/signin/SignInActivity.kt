@@ -10,17 +10,17 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.elisealix22.butterforspotify.main.MainActivity
 import com.elisealix22.butterforspotify.data.BuildConfig
+import com.elisealix22.butterforspotify.main.MainActivity
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
 import com.spotify.sdk.android.auth.AuthorizationResponse
-import kotlinx.coroutines.launch
 import java.math.BigInteger
 import java.security.SecureRandom
+import kotlinx.coroutines.launch
 
-class SignInActivity: ComponentActivity() {
+class SignInActivity : ComponentActivity() {
 
     // https://developer.spotify.com/documentation/web-api/concepts/scopes
     private val scopes = arrayOf(

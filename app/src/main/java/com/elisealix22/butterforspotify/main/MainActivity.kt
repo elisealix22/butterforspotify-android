@@ -9,9 +9,9 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.elisealix22.butterforspotify.data.auth.AuthStore
 import com.elisealix22.butterforspotify.signin.SignInActivity
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
-import com.elisealix22.butterforspotify.data.auth.AuthStore
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
