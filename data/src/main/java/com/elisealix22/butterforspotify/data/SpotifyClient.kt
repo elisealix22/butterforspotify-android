@@ -4,6 +4,7 @@ import com.elisealix22.butterforspotify.data.auth.AuthInterceptor
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
@@ -14,6 +15,13 @@ internal object SpotifyClient {
 
     private val authenticatedHttpClient = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor())
+        .apply {
+            if (BuildConfig.DEBUG) {
+                addInterceptor(
+                    HttpLoggingInterceptor().apply { setLevel(HttpLoggingInterceptor.Level.BASIC) }
+                )
+            }
+        }
         .build()
 
     internal val unAuthenticatedHttpClient = OkHttpClient.Builder().build()
