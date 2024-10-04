@@ -50,13 +50,13 @@ object AuthStore {
             applicationContext.authStore.data.firstOrNull()
         }.let { store ->
             store?.get(ACTIVE_ACCESS_TOKEN).orEmpty().isNotBlank() &&
-            store?.get(ACTIVE_REFRESH_TOKEN).orEmpty().isNotBlank()
+                store?.get(ACTIVE_REFRESH_TOKEN).orEmpty().isNotBlank()
         }
 
     val authenticatedFlow: Flow<Boolean>
         get() = applicationContext.authStore.data.map {
             it[ACTIVE_ACCESS_TOKEN].orEmpty().isNotBlank() &&
-                    it[ACTIVE_REFRESH_TOKEN].orEmpty().isNotBlank()
+                it[ACTIVE_REFRESH_TOKEN].orEmpty().isNotBlank()
         }
 
     suspend fun clearActiveTokens() {

@@ -7,5 +7,5 @@ import retrofit2.http.GET
 interface SpotifyAPI {
 
     @GET("browse/featured-playlists")
-    fun featuredPlaylists() : Call<FeaturedPlaylists>
+    fun featuredPlaylists(): Call<FeaturedPlaylists>
 }
