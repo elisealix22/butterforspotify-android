@@ -16,18 +16,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.elisealix22.butterforspotify.music.MusicScreen
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTabs
 import com.elisealix22.butterforspotify.navigation.ButterRoute
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
-fun MainScreen(
-    modifier: Modifier = Modifier
-) {
+fun MainScreen() {
     val navController = rememberNavController()
     Scaffold(
-        modifier = modifier,
         bottomBar = {
             NavigationBar {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -59,10 +57,7 @@ fun MainScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable<ButterRoute.Music> {
-                Text(
-                    text = "Hello Music tab!",
-                    modifier = Modifier.padding(innerPadding)
-                )
+                MusicScreen()
             }
             composable<ButterRoute.Profile> {
                 Text(

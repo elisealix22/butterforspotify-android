@@ -15,10 +15,9 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
 fun SignInScreen(
-    modifier: Modifier = Modifier,
     onSignInClick: () -> Unit
 ) {
-    Surface(modifier = modifier) {
+    Surface {
         Box(modifier = Modifier.fillMaxSize()) {
             Button(
                 modifier = Modifier.align(Alignment.Center),
