@@ -46,11 +46,6 @@ android {
     }
 }
 
-ktlint {
-    android = true
-    ignoreFailures = false
-}
-
 dependencies {
     // Modules
     implementation(project(":data"))
