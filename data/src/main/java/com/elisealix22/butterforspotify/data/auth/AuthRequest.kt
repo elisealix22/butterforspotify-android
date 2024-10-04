@@ -7,7 +7,7 @@ import okhttp3.Request
 
 @OptIn(ExperimentalStdlibApi::class)
 @Throws(ServiceError::class)
-internal fun Request.executeFetchTokens() : AuthResponse {
+internal fun Request.executeFetchTokens(): AuthResponse {
     val response = try {
         SpotifyClient.unAuthenticatedHttpClient.newCall(this@executeFetchTokens).execute()
     } catch (ex: Throwable) {

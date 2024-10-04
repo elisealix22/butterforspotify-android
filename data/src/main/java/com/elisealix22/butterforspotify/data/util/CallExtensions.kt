@@ -10,7 +10,7 @@ import retrofit2.Call
 
 @OptIn(ExperimentalStdlibApi::class)
 @Throws(ServiceError::class)
-internal suspend fun <T> Call<T>.fetchFromNetwork() : Flow<T> = flow {
+internal suspend fun <T> Call<T>.fetchFromNetwork(): Flow<T> = flow {
     val response = try {
         execute()
     } catch (ex: Throwable) {
