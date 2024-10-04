@@ -1,26 +1,32 @@
 package com.elisealix22.butterforspotify.data
 
-import com.elisealix22.butterforspotify.data.auth.AuthStore
+import com.elisealix22.butterforspotify.data.auth.AuthInterceptor
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 
-object SpotifyClient {
+internal object SpotifyClient {
 
-    private const val BASE_URL = "https://api.spotify.com"
+    private const val API_URL = "https://api.spotify.com/v1/"
+    internal const val TOKEN_URL = "https://accounts.spotify.com/api/token/"
 
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor { chain ->
-            val request = chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer ${AuthStore.activeUserToken}")
-                .build()
-            chain.proceed(request)
-        }
+    private val authenticatedHttpClient = OkHttpClient.Builder()
+        .addInterceptor(AuthInterceptor())
+        .build()
+
+    internal val unAuthenticatedHttpClient = OkHttpClient.Builder().build()
+
+    internal val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
         .build()
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .client(okHttpClient)
+        .baseUrl(API_URL)
+        .client(authenticatedHttpClient)
+        .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
 
-    val api: SpotifyAPI = retrofit.create(SpotifyAPI::class.java)
+    internal val api: SpotifyAPI = retrofit.create(SpotifyAPI::class.java)
 }

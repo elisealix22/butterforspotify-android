@@ -6,10 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.elisealix22.butterforspotify.main.MainActivity
-import com.elisealix22.butterforspotify.R
-import com.elisealix22.butterforspotify.data.auth.AuthStore
+import com.elisealix22.butterforspotify.data.BuildConfig
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
@@ -19,10 +21,6 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 class SignInActivity: ComponentActivity() {
-
-    companion object {
-        private const val SPOTIFY_AUTH_REDIRECT_URI = "butterforspotify://auth"
-    }
 
     // https://developer.spotify.com/documentation/web-api/concepts/scopes
     private val scopes = arrayOf(
@@ -42,16 +40,16 @@ class SignInActivity: ComponentActivity() {
         "user-read-recently-played",
         "user-library-modify",
         "user-library-read",
-        "user-read-private" // TODO(elise): do i need this one?
+        "user-read-private"
     )
 
     private val state = BigInteger(130, SecureRandom()).toString(32)
 
-    private val authRequest
+    private val authCodeRequest
         get() = AuthorizationRequest.Builder(
-            getString(R.string.spotify_client_id),
-            AuthorizationResponse.Type.TOKEN,
-            SPOTIFY_AUTH_REDIRECT_URI
+            BuildConfig.SPOTIFY_CLIENT_ID,
+            AuthorizationResponse.Type.CODE,
+            BuildConfig.SPOTIFY_REDIRECT_URI
         ).apply {
             setScopes(scopes)
             setState(state)
@@ -64,8 +62,19 @@ class SignInActivity: ComponentActivity() {
         handleResponse(response)
     }
 
+    private val viewModel: SignInViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { success ->
+                    if (success) {
+                        openApp()
+                    }
+                }
+            }
+        }
         setContent {
             ButterForSpotifyTheme {
                 SignInScreen(
@@ -77,33 +86,24 @@ class SignInActivity: ComponentActivity() {
 
     private fun signIn() {
         spotifyLogin.launch(
-            AuthorizationClient.createLoginActivityIntent(this, authRequest)
+            AuthorizationClient.createLoginActivityIntent(this, authCodeRequest)
         )
     }
 
     private fun handleResponse(response: AuthorizationResponse) {
-        when (val result = parseResult(response)) {
-            SignInResult.BadState -> Unit // TODO(elise): Show invalid state error
-            SignInResult.Canceled -> Unit
-            is SignInResult.Error -> Unit // TODO(elise): Show error message
-            is SignInResult.Success -> lifecycleScope.launch {
-                AuthStore.setActiveUserToken(result.accessToken)
-                openApp()
+        when (response.type) {
+            AuthorizationResponse.Type.CODE -> {
+                viewModel.fetchAccessToken(response.code)
             }
-        }
-    }
-
-    private fun parseResult(response: AuthorizationResponse): SignInResult {
-        if (response.state != state) {
-            return SignInResult.BadState
-        }
-        return when (response.type) {
-            AuthorizationResponse.Type.TOKEN -> SignInResult.Success(response.accessToken)
-            AuthorizationResponse.Type.EMPTY -> SignInResult.Canceled
-            AuthorizationResponse.Type.CODE,
+            AuthorizationResponse.Type.EMPTY -> {
+                // No-op. Sign in was canceled.
+            }
+            AuthorizationResponse.Type.TOKEN,
             AuthorizationResponse.Type.ERROR,
             AuthorizationResponse.Type.UNKNOWN,
-            null -> SignInResult.Error(response.error)
+            null -> {
+                // TODO(elise): Show an error.
+            }
         }
     }
 

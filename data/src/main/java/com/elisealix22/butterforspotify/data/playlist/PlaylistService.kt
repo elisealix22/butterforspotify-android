@@ -1,12 +1,15 @@
 package com.elisealix22.butterforspotify.data.playlist
 
 import com.elisealix22.butterforspotify.data.SpotifyClient
+import com.elisealix22.butterforspotify.data.error.ServiceError
+import com.elisealix22.butterforspotify.data.util.fetchFromNetwork
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 class PlaylistService {
 
-    suspend fun fetchFeaturedPlaylists(): Flow<FeaturedPlaylists> = flow {
-        emit(SpotifyClient.api.featuredPlaylists())
-    }
+    @Throws(ServiceError::class)
+    suspend fun fetchFeaturedPlaylists(): Flow<FeaturedPlaylists> =
+        SpotifyClient.api
+            .featuredPlaylists()
+            .fetchFromNetwork()
 }
