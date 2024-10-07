@@ -43,7 +43,15 @@ class SignInViewModel : ViewModel() {
         }
     }
 
-    fun showSpotifyHandshakeError(error: String) {
+    fun resetSpotifyAuth() {
+        _uiState.value = UiState.Initial(Unit)
+    }
+
+    fun showSpotifyAuthLoading() {
+        _uiState.value = UiState.Loading(Unit)
+    }
+
+    fun showSpotifyAuthError(error: String) {
         _uiState.value = UiState.Error(
             data = Unit,
             message = UiErrorMessage.Message(error),

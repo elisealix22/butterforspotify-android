@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Butter</string>
     <string name="app_name_full">Butter for Spotify</string>
+    <string name="spotify_icon_description">Spotify icon</string>
 
     <!-- Sign in -->
     <string name="sign_in">Sign in with Spotify</string>

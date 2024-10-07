@@ -88,28 +88,29 @@ class SignInActivity : ComponentActivity() {
     }
 
     private fun signIn() {
+        viewModel.showSpotifyAuthLoading()
         spotifyLogin.launch(
             AuthorizationClient.createLoginActivityIntent(this, authCodeRequest)
         )
     }
 
     private fun handleResponse(response: AuthorizationResponse) {
-        if (response.state != state) {
-            viewModel.showSpotifyHandshakeError(getString(R.string.sign_in_error_invalid_state))
-            return
-        }
         when (response.type) {
             AuthorizationResponse.Type.CODE -> {
-                viewModel.fetchAccessToken(response.code)
+                if (response.state != state) {
+                    viewModel.showSpotifyAuthError(getString(R.string.sign_in_error_invalid_state))
+                } else {
+                    viewModel.fetchAccessToken(response.code)
+                }
             }
             AuthorizationResponse.Type.EMPTY -> {
-                // No-op. Sign in was canceled.
+                viewModel.resetSpotifyAuth()
             }
             AuthorizationResponse.Type.TOKEN,
             AuthorizationResponse.Type.ERROR,
             AuthorizationResponse.Type.UNKNOWN,
             null -> {
-                viewModel.showSpotifyHandshakeError(getString(R.string.sign_in_error_response))
+                viewModel.showSpotifyAuthError(getString(R.string.sign_in_error_response))
             }
         }
     }
