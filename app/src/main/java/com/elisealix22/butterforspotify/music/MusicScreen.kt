@@ -27,7 +27,7 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 fun MusicScreen(
     viewModel: MusicViewModel = viewModel()
 ) {
-    LifecycleStartEffect(Unit) {
+    LifecycleStartEffect(viewModel) {
         viewModel.fetchFeaturedPlaylists()
         onStopOrDispose { }
     }
