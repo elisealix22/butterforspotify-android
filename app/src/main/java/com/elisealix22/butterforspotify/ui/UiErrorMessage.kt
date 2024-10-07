@@ -5,8 +5,8 @@ import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.data.error.ServiceError
 
 sealed interface UiErrorMessage {
-    data class Message(val text: String): UiErrorMessage
-    data class MessageResId(@StringRes val textResId: Int): UiErrorMessage
+    data class Message(val text: String) : UiErrorMessage
+    data class MessageResId(@StringRes val textResId: Int) : UiErrorMessage
 }
 
 fun Throwable.toUiErrorMessage(): UiErrorMessage =
