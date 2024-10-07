@@ -3,6 +3,9 @@ package com.elisealix22.butterforspotify.signin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elisealix22.butterforspotify.data.auth.AuthService
+import com.elisealix22.butterforspotify.ui.UiErrorMessage
+import com.elisealix22.butterforspotify.ui.UiState
+import com.elisealix22.butterforspotify.ui.toUiErrorMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,8 +19,8 @@ class SignInViewModel : ViewModel() {
 
     private val authService = AuthService()
 
-    private val _uiState = MutableStateFlow(false)
-    val uiState: StateFlow<Boolean> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<UiState<Unit>>(UiState.Initial())
+    val uiState: StateFlow<UiState<Unit>> = _uiState.asStateFlow()
 
     private var fetchTokenJob: Job? = null
 
@@ -27,12 +30,24 @@ class SignInViewModel : ViewModel() {
             authService.fetchAuthToken(
                 code = code
             ).onStart {
-                // TODO(elise): Show loading
+                _uiState.value = UiState.Loading(data = Unit)
             }.catch { error ->
-                // TODO(elise): Handle error & add test
-            }.collect { success ->
-                _uiState.value = success
+                _uiState.value = UiState.Error(
+                    data = Unit,
+                    message = error.toUiErrorMessage(),
+                    showInSnackbar = true
+                )
+            }.collect {
+                _uiState.value = UiState.Success(Unit)
             }
         }
+    }
+
+    fun showSpotifyHandshakeError(error: String) {
+        _uiState.value = UiState.Error(
+            data = Unit,
+            message = UiErrorMessage.Message(error),
+            showInSnackbar = true
+        )
     }
 }

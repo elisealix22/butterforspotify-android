@@ -10,8 +10,10 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.data.BuildConfig
 import com.elisealix22.butterforspotify.main.MainActivity
+import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
@@ -68,8 +70,8 @@ class SignInActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { success ->
-                    if (success) {
+                viewModel.uiState.collect { uiState ->
+                    if (uiState is UiState.Success) {
                         openApp()
                     }
                 }
@@ -78,6 +80,7 @@ class SignInActivity : ComponentActivity() {
         setContent {
             ButterForSpotifyTheme {
                 SignInScreen(
+                    viewModel = viewModel,
                     onSignInClick = { signIn() }
                 )
             }
@@ -91,6 +94,10 @@ class SignInActivity : ComponentActivity() {
     }
 
     private fun handleResponse(response: AuthorizationResponse) {
+        if (response.state != state) {
+            viewModel.showSpotifyHandshakeError(getString(R.string.sign_in_error_invalid_state))
+            return
+        }
         when (response.type) {
             AuthorizationResponse.Type.CODE -> {
                 viewModel.fetchAccessToken(response.code)
@@ -102,7 +109,7 @@ class SignInActivity : ComponentActivity() {
             AuthorizationResponse.Type.ERROR,
             AuthorizationResponse.Type.UNKNOWN,
             null -> {
-                // TODO(elise): Show an error.
+                viewModel.showSpotifyHandshakeError(getString(R.string.sign_in_error_response))
             }
         }
     }
