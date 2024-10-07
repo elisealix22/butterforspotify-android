@@ -68,12 +68,10 @@ fun <T> UiStateScaffold(
                         is UiErrorMessage.MessageResId -> stringResource(uiState.message.textResId)
                         null -> stringResource(R.string.ui_state_error)
                     }
-                    LaunchedEffect(uiState) {
-                        if (uiState.showInSnackbar) {
+                    if (uiState.showInSnackbar) {
+                        LaunchedEffect(uiState) {
                             snackbarHostState.showSnackbar(errorMessage)
                         }
-                    }
-                    if (uiState.showInSnackbar) {
                         content()
                     } else {
                         errorContent(errorMessage)
