@@ -3,6 +3,7 @@ package com.elisealix22.butterforspotify.signin
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
@@ -18,7 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.ui.UiState
@@ -60,6 +63,7 @@ private fun SignInUiScaffold(
     Button(
         enabled = !showLoading,
         modifier = Modifier
+            .fillMaxWidth()
             .padding(Dimen.Padding2x)
             .align(Alignment.Center),
         colors = ButtonDefaults.buttonColors().copy(
@@ -76,15 +80,15 @@ private fun SignInButtonContent(showLoading: Boolean) {
         if (showLoading) {
             CircularProgressIndicator(
                 modifier = Modifier
-                    .size(16.dp)
+                    .size(24.dp)
                     .align(Alignment.CenterVertically),
                 strokeWidth = 4.dp,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = Color.SpotifyGreen
             )
         } else {
             Image(
                 modifier = Modifier
-                    .size(16.dp)
+                    .size(24.dp)
                     .align(Alignment.CenterVertically),
                 painter = painterResource(R.drawable.ic_spotify_16),
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
@@ -92,7 +96,12 @@ private fun SignInButtonContent(showLoading: Boolean) {
             )
         }
         Text(
-            modifier = Modifier.padding(start = 8.dp),
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+                .align(Alignment.CenterVertically),
+            fontSize = 16.sp,
+            letterSpacing = 0.2.sp,
+            fontWeight = FontWeight.Medium,
             text = stringResource(R.string.sign_in)
         )
     }
