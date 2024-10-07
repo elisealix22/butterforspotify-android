@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elisealix22.butterforspotify.data.playlist.FeaturedPlaylists
 import com.elisealix22.butterforspotify.data.playlist.PlaylistService
+import com.elisealix22.butterforspotify.ui.UiState
+import com.elisealix22.butterforspotify.ui.toUiErrorMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,29 +18,23 @@ class MusicViewModel : ViewModel() {
 
     private val playlistService = PlaylistService()
 
-    data class MusicUiState(
-        val title: String,
-        val featuredPlaylists: FeaturedPlaylists? = null
-    )
+    private val _uiState = MutableStateFlow<UiState<FeaturedPlaylists>>(UiState.Loading(null))
+    val uiState: StateFlow<UiState<FeaturedPlaylists>> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(MusicUiState("Hello Music tab!!"))
-    val uiState: StateFlow<MusicUiState> = _uiState.asStateFlow()
-
-    init {
-        fetchFeaturedPlaylists()
-    }
-
-    private fun fetchFeaturedPlaylists() {
+    fun fetchFeaturedPlaylists() {
         viewModelScope.launch(Dispatchers.IO) {
             playlistService.fetchFeaturedPlaylists()
                 .onStart {
-                    // TODO(elise): show loading
+                    _uiState.value = UiState.Loading(data = _uiState.value.data)
                 }
                 .catch { error ->
-                    // TODO(elise): show error & add test
+                    _uiState.value = UiState.Error(
+                        message = error.toUiErrorMessage(),
+                        data = _uiState.value.data
+                    )
                 }
                 .collect { featuredPlaylists ->
-                    _uiState.value = MusicUiState("New title", featuredPlaylists)
+                    _uiState.value = UiState.Success(featuredPlaylists)
                 }
         }
     }

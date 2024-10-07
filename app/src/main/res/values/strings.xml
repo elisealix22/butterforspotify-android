@@ -1,10 +1,19 @@
 <resources>
-    <string name="app_name">Butter for Spotify</string>
+    <string name="app_name">Butter</string>
+    <string name="app_name_full">Butter for Spotify</string>
+    <string name="spotify_icon_description">Spotify icon</string>
 
     <!-- Sign in -->
-    <string name="sign_in">Sign in</string>
+    <string name="sign_in">Sign in with Spotify</string>
+    <string name="sign_in_error_invalid_state">Unable to authenticate with Spotify (invalid state)</string>
+    <string name="sign_in_error_response">Unable to authenticate with Spotify. Please try again.</string>
 
     <!-- Navigation -->
     <string name="music_tab">Music</string>
     <string name="profile_tab">Profile</string>
+
+    <!-- UI state -->
+    <string name="ui_state_empty">A little too quiet here</string>
+    <string name="ui_state_error">Something went wrong :(</string>
+    <string name="ui_state_network_error">Who unplugged the mic? Network error</string>
 </resources>

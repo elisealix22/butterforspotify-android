@@ -15,16 +15,21 @@ internal object SpotifyClient {
 
     private val authenticatedHttpClient = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor())
-        .apply {
+        .addDebugLoggingInterceptor()
+        .build()
+
+    internal val unAuthenticatedHttpClient = OkHttpClient.Builder()
+        .addDebugLoggingInterceptor()
+        .build()
+
+    private fun OkHttpClient.Builder.addDebugLoggingInterceptor(): OkHttpClient.Builder =
+        apply {
             if (BuildConfig.DEBUG) {
                 addInterceptor(
                     HttpLoggingInterceptor().apply { setLevel(HttpLoggingInterceptor.Level.BASIC) }
                 )
             }
         }
-        .build()
-
-    internal val unAuthenticatedHttpClient = OkHttpClient.Builder().build()
 
     internal val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
