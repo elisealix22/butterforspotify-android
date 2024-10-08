@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 AuthStore.authenticatedFlow.stateIn(this).collect { isAuthenticated ->
-                    Log.d(TAG, "Authenticated flow emitted $isAuthenticated")
+                    Log.d(TAG, "Authenticated: $isAuthenticated")
                     if (!isAuthenticated) signOut()
                 }
             }

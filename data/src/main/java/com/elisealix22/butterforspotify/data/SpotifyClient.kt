@@ -1,7 +1,9 @@
 package com.elisealix22.butterforspotify.data
 
 import com.elisealix22.butterforspotify.data.auth.AuthInterceptor
+import com.elisealix22.butterforspotify.data.model.album.AlbumType
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.adapters.EnumJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -32,7 +34,11 @@ internal object SpotifyClient {
         }
 
     internal val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
+        .addLast(KotlinJsonAdapterFactory())
+        .add(
+            AlbumType::class.java,
+            EnumJsonAdapter.create(AlbumType::class.java).withUnknownFallback(AlbumType.ALBUM)
+        )
         .build()
 
     private val retrofit = Retrofit.Builder()

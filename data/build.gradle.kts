@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.konan.properties.Properties
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
 }
 
@@ -27,16 +28,6 @@ android {
     val spotifyClientSecret = spotifyProperties.getProperty("spotify_client_secret")
     val spotifyRedirectUri = spotifyProperties.getProperty("spotify_redirect_uri")
     buildTypes {
-        debug {
-            isMinifyEnabled = false
-        }
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
         all {
             buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$spotifyClientId\"")
             buildConfigField("String", "SPOTIFY_CLIENT_SECRET", "\"$spotifyClientSecret\"")
@@ -59,6 +50,7 @@ dependencies {
     // Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore)
+    implementation(libs.kotlinx.serialization)
 
     // External
     implementation(libs.okhttp)
@@ -66,6 +58,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.moshi)
     implementation(libs.moshi.kotlin)
+    implementation(libs.moshi.adapters)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
