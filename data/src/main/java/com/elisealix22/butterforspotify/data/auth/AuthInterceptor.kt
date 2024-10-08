@@ -88,7 +88,7 @@ internal class AuthInterceptor : Interceptor {
         }
     }
 
-    private fun Response.handleAuthError(errorMessage: String) : Response {
+    private fun Response.handleAuthError(errorMessage: String): Response {
         Log.e(TAG, errorMessage)
         runBlocking { AuthStore.clearActiveTokens() }
         return this

@@ -4,12 +4,11 @@ import android.util.Log
 import com.elisealix22.butterforspotify.data.SpotifyClient
 import com.elisealix22.butterforspotify.data.error.ErrorResponse
 import com.elisealix22.butterforspotify.data.error.ServiceError
-import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.adapter
+import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import retrofit2.Call
-import java.io.IOException
 
 @OptIn(ExperimentalStdlibApi::class)
 @Throws(ServiceError::class)
