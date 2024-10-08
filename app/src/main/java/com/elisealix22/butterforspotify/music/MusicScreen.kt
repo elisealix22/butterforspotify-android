@@ -14,9 +14,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.elisealix22.butterforspotify.data.playlist.FeaturedPlaylists
-import com.elisealix22.butterforspotify.data.playlist.Playlist
-import com.elisealix22.butterforspotify.data.playlist.Playlists
+import com.elisealix22.butterforspotify.data.model.album.Album
+import com.elisealix22.butterforspotify.data.model.album.AlbumType
+import com.elisealix22.butterforspotify.data.model.track.TopTracksResponse
+import com.elisealix22.butterforspotify.data.model.track.Track
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
@@ -41,14 +42,14 @@ fun MusicScreen(
 
 @Composable
 private fun MusicUiScaffold(
-    uiState: UiState<FeaturedPlaylists>,
+    uiState: UiState<TopTracksResponse>,
     lazyListState: LazyListState
 ) {
     UiStateScaffold(
         uiState = uiState
     ) {
         MusicContent(
-            playlists = uiState.data?.playlists?.items.orEmpty(),
+            items = uiState.data?.items.orEmpty(),
             lazyListState = lazyListState
         )
     }
@@ -57,21 +58,21 @@ private fun MusicUiScaffold(
 @Composable
 private fun MusicContent(
     modifier: Modifier = Modifier,
-    playlists: List<Playlist>,
+    items: List<Track>,
     lazyListState: LazyListState
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = lazyListState
     ) {
-        items(playlists) { playlist ->
+        items(items) { track ->
             Column {
                 Text(
-                    text = playlist.name
+                    text = track.name
                 )
                 Text(
                     modifier = modifier.padding(bottom = Dimen.Padding),
-                    text = playlist.description.orEmpty()
+                    text = track.album.albumType.value
                 )
             }
         }
@@ -82,19 +83,21 @@ private fun MusicContent(
 @Composable
 fun MusicScreenPreview() {
     val uiState = UiState.Success(
-        data = FeaturedPlaylists(
-            "message",
-            playlists = Playlists(
-                limit = 20,
-                href = "href",
-                next = null,
-                offset = 0,
-                total = 2,
-                items = listOf(
-                    Playlist(id = "123", href = "href", name = "list name 1", "list description 1"),
-                    Playlist(id = "123", href = "href", name = "list name 1", "list description 1")
+        data = TopTracksResponse(
+            items = listOf(
+                Track(
+                    id = "123",
+                    name = "Track 1",
+                    album = Album(id = "Album 1", albumType = AlbumType.ALBUM, name = "Album 1")
+                ),
+                Track(
+                    id = "345",
+                    name = "Track 2",
+                    album = Album(id = "Album 2", albumType = AlbumType.SINGLE, name = "Album 2")
                 )
-            )
+            ),
+            next = null,
+            total = 2
         )
     )
     ButterForSpotifyTheme {

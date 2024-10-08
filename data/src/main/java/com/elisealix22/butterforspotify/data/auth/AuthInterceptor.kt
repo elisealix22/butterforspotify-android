@@ -18,15 +18,18 @@ internal class AuthInterceptor : Interceptor {
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {
+        val accessToken = AuthStore.activeAccessToken.orEmpty()
+        val refreshToken = AuthStore.activeRefreshToken.orEmpty()
+
         val request = chain.request().newBuilder()
-            .header("Authorization", "Bearer ${AuthStore.activeAccessToken}")
+            .header("Authorization", "Bearer $accessToken")
             .build()
         val response = chain.proceed(request)
 
         if (!response.isSuccessful && response.code == 401) {
             Log.i(TAG, "Refreshing auth token")
             val form = FormBody.Builder()
-                .add("refresh_token", AuthStore.activeRefreshToken.orEmpty())
+                .add("refresh_token", refreshToken)
                 .add("grant_type", "refresh_token")
                 .build()
             val refreshAuthRequest = Request.Builder()
@@ -44,22 +47,19 @@ internal class AuthInterceptor : Interceptor {
             val authResponse = try {
                 refreshAuthRequest.executeFetchTokens()
             } catch (ex: ServiceError) {
-                Log.e(TAG, "Error fetching refresh token")
-                runBlocking { AuthStore.clearActiveTokens() }
-                return response
+                return response.handleAuthError("Error fetching refresh token")
             }
-            if (authResponse.accessToken.isBlank()) {
-                Log.e(TAG, "Invalid auth token")
-                runBlocking { AuthStore.clearActiveTokens() }
-                return response
+            val newAccessToken = authResponse.accessToken
+            if (newAccessToken.isBlank()) {
+                return response.handleAuthError("Invalid auth token")
             }
             val newRefreshToken = authResponse.refreshToken.orEmpty().let {
                 // Use the existing refresh token if one is not returned from the API.
-                it.ifBlank { AuthStore.activeRefreshToken.orEmpty() }
+                it.ifBlank { refreshToken }
             }
             runBlocking {
                 AuthStore.setActiveTokens(
-                    accessToken = authResponse.accessToken,
+                    accessToken = newAccessToken,
                     refreshToken = newRefreshToken
                 )
             }
@@ -68,15 +68,29 @@ internal class AuthInterceptor : Interceptor {
                 response.close()
                 val retryOriginalRequest = request
                     .newBuilder()
-                    .header("Authorization", "Bearer ${authResponse.accessToken}")
+                    .header("Authorization", "Bearer $newAccessToken")
                     .build()
+                logDebugAccessToken(newAccessToken)
                 return chain.proceed(retryOriginalRequest)
             } else {
-                Log.e(TAG, "Couldn't store new tokens")
-                runBlocking { AuthStore.clearActiveTokens() }
-                return response
+                return response.handleAuthError("Couldn't store new tokens")
             }
         }
+
+        logDebugAccessToken(accessToken)
+
         return response
+    }
+
+    private fun logDebugAccessToken(token: String) {
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "Bearer $token")
+        }
+    }
+
+    private fun Response.handleAuthError(errorMessage: String) : Response {
+        Log.e(TAG, errorMessage)
+        runBlocking { AuthStore.clearActiveTokens() }
+        return this
     }
 }
