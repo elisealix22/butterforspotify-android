@@ -90,24 +90,23 @@ fun <T> UiStateScaffold(
 }
 
 @Composable
-fun BoxScope.DefaultLoadingContent(
+private fun BoxScope.DefaultLoadingContent(
     modifier: Modifier = Modifier
 ) {
     CircularProgressIndicator(
         modifier = modifier
-            .width(64.dp)
-            .align(Alignment.Center),
-        strokeWidth = 8.dp
+            .width(48.dp)
+            .align(Alignment.Center)
     )
 }
 
 @Composable
-fun BoxScope.DefaultEmptyContent(
+private fun BoxScope.DefaultEmptyContent(
     modifier: Modifier = Modifier
 ) {
     Text(
         modifier = modifier
-            .padding(Dimen.Padding2x)
+            .padding(Dimen.PaddingDouble)
             .align(Alignment.Center),
         textAlign = TextAlign.Center,
         text = rainbowText(stringResource(R.string.ui_state_empty)),
@@ -116,13 +115,13 @@ fun BoxScope.DefaultEmptyContent(
 }
 
 @Composable
-fun BoxScope.DefaultErrorContent(
+private fun BoxScope.DefaultErrorContent(
     modifier: Modifier = Modifier,
     errorMessage: String
 ) {
     Text(
         modifier = modifier
-            .padding(Dimen.Padding2x)
+            .padding(Dimen.PaddingDouble)
             .align(Alignment.Center),
         textAlign = TextAlign.Center,
         text = rainbowText(errorMessage),

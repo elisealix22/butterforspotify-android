@@ -61,6 +61,8 @@ dependencies {
 
     // External libraries
     implementation(libs.spotify.auth)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

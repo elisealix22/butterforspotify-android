@@ -64,7 +64,7 @@ private fun SignInUiScaffold(
         enabled = !showLoading,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(Dimen.Padding2x)
+            .padding(Dimen.PaddingDouble)
             .align(Alignment.Center),
         colors = ButtonDefaults.buttonColors().copy(
             containerColor = Color.SpotifyGreen
