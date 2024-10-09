@@ -113,7 +113,11 @@ private fun MusicContent(
                     .fillMaxWidth()
                     .padding(
                         top = if (index == 0) columnPadding else 0.dp,
-                        bottom = if (index == rowData.lastIndex) Dimen.PaddingDouble else Dimen.PaddingOneAndAHalf,
+                        bottom = if (index == rowData.lastIndex) {
+                            Dimen.PaddingDouble
+                        } else {
+                            Dimen.PaddingOneAndAHalf
+                        },
                         start = columnPadding
                     )
             ) {
