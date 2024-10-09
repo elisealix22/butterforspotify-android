@@ -6,22 +6,28 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Color.Yellow,
-    onPrimary = Color.AlmostBlack,
-    secondary = Color.Tangerine,
-    tertiary = Color.Pink,
-    background = Color.AlmostBlack,
-    surface = Color.AlmostBlack
+private val LightColorScheme = lightColorScheme(
+    primary = ThemeColor.AlmostBlack,
+    onPrimary = ThemeColor.White,
+    background = ThemeColor.White,
+    surface = ThemeColor.White,
+    surfaceContainer = ThemeColor.BottomNavBackgroundLight,
+    primaryContainer = ThemeColor.White,
+    onPrimaryContainer = ThemeColor.AlmostBlack,
+    secondaryContainer = ThemeColor.BottomNavSelectedLight,
+    onSecondaryContainer = ThemeColor.AlmostBlack
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Color.Yellow,
-    onPrimary = Color.White,
-    secondary = Color.Tangerine,
-    tertiary = Color.Pink,
-    background = Color.White,
-    surface = Color.White
+private val DarkColorScheme = darkColorScheme(
+    primary = ThemeColor.White,
+    onPrimary = ThemeColor.AlmostBlack,
+    background = ThemeColor.AlmostBlack,
+    surface = ThemeColor.AlmostBlack,
+    surfaceContainer = ThemeColor.BottomNavBackgroundDark,
+    primaryContainer = ThemeColor.AlmostBlack,
+    onPrimaryContainer = ThemeColor.White,
+    secondaryContainer = ThemeColor.BottomNavSelectedDark,
+    onSecondaryContainer = ThemeColor.White
 )
 
 @Composable

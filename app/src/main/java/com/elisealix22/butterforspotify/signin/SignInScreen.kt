@@ -27,8 +27,8 @@ import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
-import com.elisealix22.butterforspotify.ui.theme.Color
 import com.elisealix22.butterforspotify.ui.theme.Dimen
+import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
@@ -64,10 +64,10 @@ private fun SignInUiScaffold(
         enabled = !showLoading,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(Dimen.Padding2x)
+            .padding(Dimen.PaddingDouble)
             .align(Alignment.Center),
         colors = ButtonDefaults.buttonColors().copy(
-            containerColor = Color.SpotifyGreen
+            containerColor = ThemeColor.SpotifyGreen
         ),
         content = { SignInButtonContent(showLoading = showLoading) },
         onClick = onSignInClick
@@ -83,7 +83,7 @@ private fun SignInButtonContent(showLoading: Boolean) {
                     .size(24.dp)
                     .align(Alignment.CenterVertically),
                 strokeWidth = 4.dp,
-                color = Color.SpotifyGreen
+                color = ThemeColor.SpotifyGreen
             )
         } else {
             Image(

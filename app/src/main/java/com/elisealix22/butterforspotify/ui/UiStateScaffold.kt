@@ -25,9 +25,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
-import com.elisealix22.butterforspotify.ui.theme.Color
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.TextStyleFullscreen
+import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
@@ -90,24 +90,23 @@ fun <T> UiStateScaffold(
 }
 
 @Composable
-fun BoxScope.DefaultLoadingContent(
+private fun BoxScope.DefaultLoadingContent(
     modifier: Modifier = Modifier
 ) {
     CircularProgressIndicator(
         modifier = modifier
-            .width(64.dp)
-            .align(Alignment.Center),
-        strokeWidth = 8.dp
+            .width(48.dp)
+            .align(Alignment.Center)
     )
 }
 
 @Composable
-fun BoxScope.DefaultEmptyContent(
+private fun BoxScope.DefaultEmptyContent(
     modifier: Modifier = Modifier
 ) {
     Text(
         modifier = modifier
-            .padding(Dimen.Padding2x)
+            .padding(Dimen.PaddingDouble)
             .align(Alignment.Center),
         textAlign = TextAlign.Center,
         text = rainbowText(stringResource(R.string.ui_state_empty)),
@@ -116,13 +115,13 @@ fun BoxScope.DefaultEmptyContent(
 }
 
 @Composable
-fun BoxScope.DefaultErrorContent(
+private fun BoxScope.DefaultErrorContent(
     modifier: Modifier = Modifier,
     errorMessage: String
 ) {
     Text(
         modifier = modifier
-            .padding(Dimen.Padding2x)
+            .padding(Dimen.PaddingDouble)
             .align(Alignment.Center),
         textAlign = TextAlign.Center,
         text = rainbowText(errorMessage),
@@ -135,11 +134,11 @@ private fun rainbowText(text: String): AnnotatedString = buildAnnotatedString {
         SpanStyle(
             brush = Brush.linearGradient(
                 colors = listOf(
-                    Color.Tangerine,
-                    Color.Orange,
-                    Color.Citrus,
-                    Color.Blue,
-                    Color.Pink
+                    ThemeColor.Tangerine,
+                    ThemeColor.Orange,
+                    ThemeColor.Citrus,
+                    ThemeColor.Blue,
+                    ThemeColor.Pink
                 )
             )
         )
