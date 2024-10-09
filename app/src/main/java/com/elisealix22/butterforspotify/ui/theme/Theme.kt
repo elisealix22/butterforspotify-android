@@ -12,6 +12,8 @@ private val LightColorScheme = lightColorScheme(
     background = ThemeColor.White,
     surface = ThemeColor.White,
     surfaceContainer = ThemeColor.BottomNavBackgroundLight,
+    primaryContainer = ThemeColor.White,
+    onPrimaryContainer = ThemeColor.AlmostBlack,
     secondaryContainer = ThemeColor.BottomNavSelectedLight,
     onSecondaryContainer = ThemeColor.AlmostBlack
 )
@@ -22,6 +24,8 @@ private val DarkColorScheme = darkColorScheme(
     background = ThemeColor.AlmostBlack,
     surface = ThemeColor.AlmostBlack,
     surfaceContainer = ThemeColor.BottomNavBackgroundDark,
+    primaryContainer = ThemeColor.AlmostBlack,
+    onPrimaryContainer = ThemeColor.White,
     secondaryContainer = ThemeColor.BottomNavSelectedDark,
     onSecondaryContainer = ThemeColor.White
 )
