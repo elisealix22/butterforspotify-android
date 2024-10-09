@@ -25,9 +25,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
-import com.elisealix22.butterforspotify.ui.theme.Color
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.TextStyleFullscreen
+import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
@@ -134,11 +134,11 @@ private fun rainbowText(text: String): AnnotatedString = buildAnnotatedString {
         SpanStyle(
             brush = Brush.linearGradient(
                 colors = listOf(
-                    Color.Tangerine,
-                    Color.Orange,
-                    Color.Citrus,
-                    Color.Blue,
-                    Color.Pink
+                    ThemeColor.Tangerine,
+                    ThemeColor.Orange,
+                    ThemeColor.Citrus,
+                    ThemeColor.Blue,
+                    ThemeColor.Pink
                 )
             )
         )

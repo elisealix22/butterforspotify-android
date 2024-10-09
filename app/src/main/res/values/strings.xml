@@ -10,7 +10,7 @@
 
     <!-- Navigation -->
     <string name="music_tab">Music</string>
-    <string name="profile_tab">Profile</string>
+    <string name="audio_tab">Episodes</string>
 
     <!-- UI state -->
     <string name="ui_state_empty">A little too quiet here</string>

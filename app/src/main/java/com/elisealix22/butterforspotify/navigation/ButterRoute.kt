@@ -7,5 +7,5 @@ sealed class ButterRoute {
     data object Music : ButterRoute()
 
     @Serializable
-    data object Profile : ButterRoute()
+    data object Audio : ButterRoute()
 }

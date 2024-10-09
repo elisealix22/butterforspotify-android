@@ -35,8 +35,8 @@ import com.elisealix22.butterforspotify.data.model.artist.Artist
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
-import com.elisealix22.butterforspotify.ui.theme.Color
 import com.elisealix22.butterforspotify.ui.theme.Dimen
+import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 import kotlin.random.Random
 
@@ -97,11 +97,11 @@ private fun MusicContent(
         items.chunked(columnConfig.numColumns)
     }
     val colors = listOf(
-        Color.Tangerine,
-        Color.Orange,
-        Color.Citrus,
-        Color.Blue,
-        Color.Pink
+        ThemeColor.Tangerine,
+        ThemeColor.Orange,
+        ThemeColor.Citrus,
+        ThemeColor.Blue,
+        ThemeColor.Pink
     )
     LazyColumn(
         modifier = modifier.fillMaxSize(),
