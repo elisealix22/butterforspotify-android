@@ -20,6 +20,7 @@ okhttp = "4.12.0"
 retrofit = "2.11.0"
 moshi = "1.15.1"
 spotify = "2.1.2"
+gson = "2.10.1" # Required for Spotify App Remote AAR
 coil = "3.0.0-rc01"
 
 [libraries]
@@ -49,6 +50,7 @@ retrofit-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", v
 moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
 moshi-adapters = { group = "com.squareup.moshi", name = "moshi-adapters", version.ref = "moshi" }
 spotify-auth = { group = "com.spotify.android", name = "auth-store", version.ref = "spotify" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 
