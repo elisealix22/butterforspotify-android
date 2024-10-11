@@ -11,6 +11,6 @@ data class BottomNavigationTab(
 )
 
 val BottomNavigationTabs = listOf(
-    BottomNavigationTab(R.string.music_tab, R.drawable.ic_disc, ButterRoute.Music),
-    BottomNavigationTab(R.string.audio_tab, R.drawable.ic_mic, ButterRoute.Audio)
+    BottomNavigationTab(R.string.music_tab, R.drawable.ic_disc_24, ButterRoute.Music),
+    BottomNavigationTab(R.string.audio_tab, R.drawable.ic_mic_24, ButterRoute.Audio)
 )

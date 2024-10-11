@@ -90,7 +90,7 @@ private fun SignInButtonContent(showLoading: Boolean) {
                 modifier = Modifier
                     .size(24.dp)
                     .align(Alignment.CenterVertically),
-                painter = painterResource(R.drawable.ic_spotify_16),
+                painter = painterResource(R.drawable.ic_spotify_24),
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
                 contentDescription = stringResource(R.string.spotify_icon_description)
             )

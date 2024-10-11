@@ -1,16 +1,19 @@
 package com.elisealix22.butterforspotify.player
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -23,7 +26,6 @@ import com.elisealix22.butterforspotify.ui.text
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
-import com.spotify.protocol.types.Image
 
 private val PlayerBarImageSize = 48.dp
 
@@ -41,7 +43,34 @@ fun PlayerBar(
                 .padding(horizontal = Dimen.Padding, vertical = Dimen.PaddingHalf)
         ) {
             when (playerUiState) {
-                is UiState.Success -> TrackInfo(playerUiState.data)
+                is UiState.Success -> {
+                    val isPaused = playerUiState.data.playerState.isPaused
+                    TrackInfo(playerUiState.data)
+                    Spacer(modifier = Modifier.weight(1F))
+                    IconButton(
+                        onClick = {
+                            if (isPaused) {
+                                playerUiState.data.spotifyApis?.playerApi?.resume()
+                            } else {
+                                playerUiState.data.spotifyApis?.playerApi?.pause()
+                            }
+                        },
+                        enabled = playerUiState.data.spotifyApis != null,
+                        content = {
+                            if (isPaused) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_play_24),
+                                    contentDescription = stringResource(R.string.resume)
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_pause_24),
+                                    contentDescription = stringResource(R.string.pause)
+                                )
+                            }
+                        }
+                    )
+                }
                 is UiState.Error -> Error(playerUiState.message)
                 is UiState.Loading, is UiState.Initial -> {
                     playerUiState.data.let {
@@ -63,7 +92,7 @@ private fun RowScope.TrackInfo(
             .align(Alignment.CenterVertically),
         imageUri = player.playerState.track.imageUri,
         imagesApi = player.spotifyApis?.imagesApi,
-        imageDimension = Image.Dimension.THUMBNAIL,
+        imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
         size = PlayerBarImageSize,
         contentDescription = stringResource(
             R.string.album_art_content_description,
@@ -108,6 +137,17 @@ private fun RowScope.Error(uiErrorMessage: UiErrorMessage?) {
 
 @ThemePreview
 @Composable
+fun PlayerBarSuccessPreview() {
+    val uiState = UiState.Success(Player1)
+    ButterForSpotifyTheme {
+        Surface {
+            PlayerBar(playerUiState = uiState)
+        }
+    }
+}
+
+@ThemePreview
+@Composable
 fun PlayerBarLoadingEmptyPreview() {
     val uiState = UiState.Loading<Player>(null)
     ButterForSpotifyTheme {
@@ -132,17 +172,6 @@ fun PlayerBarLoadingWithContentPreview() {
 @Composable
 fun PlayerBarErrorPreview() {
     val uiState = UiState.Error<Player>(null)
-    ButterForSpotifyTheme {
-        Surface {
-            PlayerBar(playerUiState = uiState)
-        }
-    }
-}
-
-@ThemePreview
-@Composable
-fun PlayerBarSuccessPreview() {
-    val uiState = UiState.Success(Player1)
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)
