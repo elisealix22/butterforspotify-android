@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.elisealix22.butterforspotify.R
+import com.elisealix22.butterforspotify.data.BuildConfig
 import com.elisealix22.butterforspotify.data.error.ServiceError
 
 sealed interface UiErrorMessage {
@@ -21,7 +22,19 @@ internal fun Throwable.toUiErrorMessage(): UiErrorMessage =
                 UiErrorMessage.Message(it)
             }
         }
-        else -> UiErrorMessage.MessageResId(R.string.ui_state_error)
+        else -> {
+            if (BuildConfig.DEBUG) {
+                message.let {
+                    if (it.isNullOrBlank()) {
+                        UiErrorMessage.MessageResId(R.string.ui_state_error)
+                    } else {
+                        UiErrorMessage.Message(it)
+                    }
+                }
+            } else {
+                UiErrorMessage.MessageResId(R.string.ui_state_error)
+            }
+        }
     }
 
 @Composable

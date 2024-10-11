@@ -9,11 +9,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.elisealix22.butterforspotify.data.auth.AuthStore
+import com.elisealix22.butterforspotify.player.PlayerViewModel
 import com.elisealix22.butterforspotify.signin.SignInActivity
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import kotlinx.coroutines.flow.stateIn
@@ -47,12 +47,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             ButterForSpotifyTheme {
                 val playerUiState by playerViewModel.uiState.collectAsState()
-                // TODO(elise): new shared player ui state?
-                val remote by playerViewModel.spotifyAppRemote.collectAsState()
-                val spotifyApis = remember(remote) { remote?.toSpotifyApis() }
                 MainScreen(
-                    playerUiState  = playerUiState,
-                    spotifyApis = spotifyApis
+                    playerUiState = playerUiState
                 )
             }
         }

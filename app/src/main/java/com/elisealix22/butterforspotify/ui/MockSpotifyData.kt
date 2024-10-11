@@ -1,5 +1,6 @@
 package com.elisealix22.butterforspotify.ui
 
+import com.elisealix22.butterforspotify.player.Player
 import com.spotify.protocol.types.Album
 import com.spotify.protocol.types.Artist
 import com.spotify.protocol.types.ImageUri
@@ -36,4 +37,9 @@ val PlayerState1 = PlayerState(
     30L,
     PlayerOptions1,
     PlayerRestrictions1
+)
+
+val Player1 = Player(
+    playerState = PlayerState1,
+    spotifyApis = null
 )

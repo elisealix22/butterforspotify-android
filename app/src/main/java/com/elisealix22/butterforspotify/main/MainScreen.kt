@@ -1,10 +1,8 @@
 package com.elisealix22.butterforspotify.main
 
-import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -28,22 +26,23 @@ import com.elisealix22.butterforspotify.music.MusicScreen
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTab
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTabs
 import com.elisealix22.butterforspotify.navigation.ButterRoute
+import com.elisealix22.butterforspotify.player.Player
+import com.elisealix22.butterforspotify.player.PlayerBar
+import com.elisealix22.butterforspotify.ui.Player1
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
-import com.spotify.protocol.types.PlayerState
 
 @Composable
 fun MainScreen(
-    playerUiState: UiState<PlayerState> = UiState.Initial(),
-    spotifyApis: PlayerViewModel.SpotifyApis? = null
+    playerUiState: UiState<Player>
 ) {
     val navController = rememberNavController()
     Scaffold(
         bottomBar = {
             Column {
-                PlayerBar(playerUiState = playerUiState, spotifyApis = spotifyApis)
+                PlayerBar(playerUiState = playerUiState)
                 NavigationBar(navController)
             }
         }
@@ -55,7 +54,7 @@ fun MainScreen(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable<ButterRoute.Music> {
-                    MusicScreen(spotifyApis = spotifyApis)
+                    MusicScreen(playerUiState = playerUiState)
                 }
                 composable<ButterRoute.Audio> {
                     Text(
@@ -136,6 +135,6 @@ fun TabPreviews() {
 @Composable
 fun MainScreenPreview() {
     ButterForSpotifyTheme {
-        MainScreen()
+        MainScreen(UiState.Success(Player1))
     }
 }
