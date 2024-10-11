@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -44,18 +45,6 @@ private fun fallbackPainter(): Painter = ColorPainter(
     FallbackColors[Random.Default.nextInt(FallbackColors.size)]
 )
 
-private data class AsyncBitmap(
-    val isError: Boolean,
-    val bitmap: Bitmap?
-) {
-    companion object {
-        val Initial = AsyncBitmap(
-            isError = false,
-            bitmap = null
-        )
-    }
-}
-
 @Composable
 fun AlbumImage(
     modifier: Modifier = Modifier,
@@ -77,29 +66,31 @@ fun AlbumImage(
 @Composable
 fun AsyncAlbumImage(
     modifier: Modifier = Modifier,
-    imageUri: ImageUri?,
     imagesApi: ImagesApi?,
+    imageUri: ImageUri?,
     imageDimension: Image.Dimension,
     contentDescription: String,
     size: Dp
 ) {
-    val asyncBitmap = remember(imageUri) { mutableStateOf(AsyncBitmap.Initial) }
-    if (imageUri != null && imagesApi != null && asyncBitmap.value.bitmap == null) {
+    val bitmap = rememberSaveable(imageUri, imageDimension) { mutableStateOf<Bitmap?>(null) }
+    val isError = remember { mutableStateOf(false) }
+    if (imageUri != null && imagesApi != null && bitmap.value == null) {
         LaunchedEffect(imageUri, imagesApi) {
             Log.i(TAG, "Fetching bitmap: $imageUri")
+            isError.value = false
             imagesApi.getImage(
                 imageUri,
                 imageDimension
-            ).setResultCallback { bitmap ->
-                asyncBitmap.value = AsyncBitmap(isError = false, bitmap)
+            ).setResultCallback { newBitmap ->
+                bitmap.value = newBitmap
             }.setErrorCallback {
-                asyncBitmap.value = AsyncBitmap(isError = false, null)
+                isError.value = true
             }
         }
     }
     val imagePainter = when {
-        asyncBitmap.value.bitmap != null -> rememberAsyncImagePainter(asyncBitmap.value.bitmap)
-        asyncBitmap.value.isError -> fallbackPainter()
+        bitmap.value != null -> rememberAsyncImagePainter(bitmap.value)
+        isError.value -> fallbackPainter()
         else -> ColorPainter(Color.Transparent)
     }
     Image(
