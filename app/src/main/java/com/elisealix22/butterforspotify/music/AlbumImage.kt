@@ -5,7 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +24,6 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.imageLoader
 import coil3.memory.MemoryCache
 import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
@@ -56,12 +55,9 @@ fun AlbumImage(
         modifier = modifier
             .size(size)
             .clip(RoundedCornerShape(AlbumCornerSize)),
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(url)
-            .crossfade(true)
-            .build(),
+        model = url,
         contentDescription = contentDescription,
-        error = fallbackPainter(),
+        error = errorPainter(),
         placeholder = placeholderPainter()
     )
 }
@@ -97,33 +93,30 @@ fun AsyncAlbumImage(
             }
         }
     }
-    val imagePainter = when {
-        image.value != null -> rememberAsyncImagePainter(
-            ImageRequest.Builder(context)
-                .data(image.value)
-                .memoryCacheKey(cacheKey)
-                .build()
-        )
-        isError.value -> fallbackPainter()
-        else -> placeholderPainter()
-    }
     Image(
         modifier = modifier
             .size(size)
             .clip(RoundedCornerShape(AlbumCornerSize)),
-        painter = imagePainter,
+        painter = rememberAsyncImagePainter(
+            model = ImageRequest.Builder(context)
+                .data(image.value)
+                .memoryCacheKey(cacheKey)
+                .build(),
+            error = if (isError.value) errorPainter() else placeholderPainter(),
+            placeholder = placeholderPainter()
+        ),
         contentDescription = contentDescription
     )
 }
 
 @Composable
-private fun fallbackPainter(): Painter = ColorPainter(
+private fun errorPainter(): Painter = ColorPainter(
     FallbackColors[Random.Default.nextInt(FallbackColors.size)]
 )
 
 @Composable
 private fun placeholderPainter(): Painter = ColorPainter(
-    MaterialTheme.colorScheme.onSurface
+    Color.Transparent
 )
 
 @ThemePreview
