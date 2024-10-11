@@ -10,5 +10,12 @@ data class Album(
     val albumType: AlbumType,
     val name: String,
     val images: List<SpotifyImage>,
-    val artists: List<Artist>
+    val artists: List<Artist>,
+    val uri: String,
+    @Json(name = "release_date")
+    val releaseDate: String,
+    @Json(name = "release_date_precision")
+    val releaseDatePrecision: ReleaseDatePrecision,
+    @Json(name = "total_tracks")
+    val totalTracks: Int
 )

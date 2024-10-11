@@ -16,4 +16,9 @@
     <string name="ui_state_empty">A little too quiet here</string>
     <string name="ui_state_error">Something went wrong :(</string>
     <string name="ui_state_network_error">Who unplugged the mic? Network error</string>
+
+    <!-- Player -->
+    <string name="play_x">Play %s</string>
+    <string name="connecting_to_spotify">Connecting to Spotify…</string>
+    <string name="album_art_content_description">%s album art</string>
 </resources>

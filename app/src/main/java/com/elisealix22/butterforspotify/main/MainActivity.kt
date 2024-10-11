@@ -7,6 +7,9 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -22,7 +25,7 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
     }
 
-    private val appRemoteViewModel: AppRemoteViewModel by viewModels()
+    private val playerViewModel: PlayerViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,9 +46,26 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ButterForSpotifyTheme {
-                MainScreen(appRemoteViewModel = appRemoteViewModel)
+                val playerUiState by playerViewModel.uiState.collectAsState()
+                // TODO(elise): new shared player ui state?
+                val remote by playerViewModel.spotifyAppRemote.collectAsState()
+                val spotifyApis = remember(remote) { remote?.toSpotifyApis() }
+                MainScreen(
+                    playerUiState  = playerUiState,
+                    spotifyApis = spotifyApis
+                )
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        playerViewModel.connect()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        playerViewModel.disconnect()
     }
 
     private fun signOut() {

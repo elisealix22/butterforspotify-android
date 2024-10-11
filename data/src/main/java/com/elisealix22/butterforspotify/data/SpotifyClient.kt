@@ -2,6 +2,7 @@ package com.elisealix22.butterforspotify.data
 
 import com.elisealix22.butterforspotify.data.auth.AuthInterceptor
 import com.elisealix22.butterforspotify.data.model.album.AlbumType
+import com.elisealix22.butterforspotify.data.model.album.ReleaseDatePrecision
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.EnumJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -37,7 +38,13 @@ internal object SpotifyClient {
         .addLast(KotlinJsonAdapterFactory())
         .add(
             AlbumType::class.java,
-            EnumJsonAdapter.create(AlbumType::class.java).withUnknownFallback(AlbumType.ALBUM)
+            EnumJsonAdapter.create(AlbumType::class.java)
+                .withUnknownFallback(AlbumType.ALBUM)
+        )
+        .add(
+            ReleaseDatePrecision::class.java,
+            EnumJsonAdapter.create(ReleaseDatePrecision::class.java)
+                .withUnknownFallback(ReleaseDatePrecision.YEAR)
         )
         .build()
 
