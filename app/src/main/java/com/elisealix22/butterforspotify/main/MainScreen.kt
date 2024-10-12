@@ -43,7 +43,7 @@ fun MainScreen(
         bottomBar = {
             Column {
                 PlayerBar(playerUiState = playerUiState)
-                NavigationBar(navController)
+                BottomNavigationBar(navController)
             }
         }
     ) { innerPadding ->
@@ -68,14 +68,14 @@ fun MainScreen(
 }
 
 @Composable
-private fun NavigationBar(
+private fun BottomNavigationBar(
     navController: NavController
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     NavigationBar {
         BottomNavigationTabs.forEach { tab ->
-            NavigationBarItem(
+            BottomNavigationBarItem(
                 tab = tab,
                 isSelected = currentDestination?.hierarchy?.any {
                     it.hasRoute(tab.route::class)
@@ -95,7 +95,7 @@ private fun NavigationBar(
 }
 
 @Composable
-private fun RowScope.NavigationBarItem(
+private fun RowScope.BottomNavigationBarItem(
     tab: BottomNavigationTab,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -121,7 +121,7 @@ fun TabPreviews() {
     ButterForSpotifyTheme {
         Row {
             BottomNavigationTabs.forEachIndexed { index, tab ->
-                NavigationBarItem(
+                BottomNavigationBarItem(
                     tab = tab,
                     isSelected = index == 0,
                     onClick = { }
