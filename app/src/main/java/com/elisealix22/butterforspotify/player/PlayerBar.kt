@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,7 +20,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
-import com.elisealix22.butterforspotify.ui.Player1
 import com.elisealix22.butterforspotify.ui.UiErrorMessage
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.text
@@ -43,43 +43,52 @@ fun PlayerBar(
                 .padding(horizontal = Dimen.Padding, vertical = Dimen.PaddingHalf)
         ) {
             when (playerUiState) {
-                is UiState.Success -> {
-                    val isPaused = playerUiState.data.playerState.isPaused
-                    TrackInfo(playerUiState.data)
-                    Spacer(modifier = Modifier.weight(1F))
-                    IconButton(
-                        onClick = {
-                            if (isPaused) {
-                                playerUiState.data.spotifyApis?.playerApi?.resume()
-                            } else {
-                                playerUiState.data.spotifyApis?.playerApi?.pause()
-                            }
-                        },
-                        enabled = playerUiState.data.spotifyApis != null,
-                        content = {
-                            if (isPaused) {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_play_24),
-                                    contentDescription = stringResource(R.string.resume)
-                                )
-                            } else {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_pause_24),
-                                    contentDescription = stringResource(R.string.pause)
-                                )
-                            }
-                        }
-                    )
-                }
+                is UiState.Success -> PlayerContent(playerUiState.data)
                 is UiState.Error -> Error(playerUiState.message)
                 is UiState.Loading, is UiState.Initial -> {
                     playerUiState.data.let {
-                        if (it == null) Connecting() else TrackInfo(it)
+                        if (it == null) Connecting() else PlayerContent(it)
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RowScope.PlayerContent(player: Player) {
+    TrackInfo(player)
+    Spacer(modifier = Modifier.weight(1F))
+    PlayButton(player)
+}
+
+@Composable
+private fun RowScope.PlayButton(player: Player) {
+    val isPaused = player.playerState.isPaused
+    IconButton(
+        modifier = Modifier.align(Alignment.CenterVertically),
+        onClick = {
+            if (isPaused) {
+                player.spotifyApis?.playerApi?.resume()
+            } else {
+                player.spotifyApis?.playerApi?.pause()
+            }
+        },
+        enabled = player.spotifyApis != null,
+        content = {
+            if (isPaused) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_play_24),
+                    contentDescription = stringResource(R.string.resume)
+                )
+            } else {
+                Icon(
+                    painter = painterResource(R.drawable.ic_pause_24),
+                    contentDescription = stringResource(R.string.pause)
+                )
+            }
+        }
+    )
 }
 
 @Composable
@@ -138,7 +147,7 @@ private fun RowScope.Error(uiErrorMessage: UiErrorMessage?) {
 @ThemePreview
 @Composable
 fun PlayerBarSuccessPreview() {
-    val uiState = UiState.Success(Player1)
+    val uiState = UiState.Success(MockPlayer)
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)
@@ -160,7 +169,7 @@ fun PlayerBarLoadingEmptyPreview() {
 @ThemePreview
 @Composable
 fun PlayerBarLoadingWithContentPreview() {
-    val uiState = UiState.Loading(Player1)
+    val uiState = UiState.Loading(MockPlayerWithCachedState)
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)

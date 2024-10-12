@@ -31,8 +31,8 @@ import com.elisealix22.butterforspotify.data.model.album.Album
 import com.elisealix22.butterforspotify.data.model.album.AlbumType
 import com.elisealix22.butterforspotify.data.model.album.ReleaseDatePrecision
 import com.elisealix22.butterforspotify.data.model.artist.Artist
+import com.elisealix22.butterforspotify.player.MockPlayer
 import com.elisealix22.butterforspotify.player.Player
-import com.elisealix22.butterforspotify.ui.Player1
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
@@ -206,7 +206,7 @@ fun MusicScreenPreview() {
         MusicUiScaffold(
             uiState = uiState,
             lazyListState = rememberLazyListState(),
-            playerUiState = UiState.Success(Player1)
+            playerUiState = UiState.Success(MockPlayer)
         )
     }
 }

@@ -26,9 +26,9 @@ import com.elisealix22.butterforspotify.music.MusicScreen
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTab
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTabs
 import com.elisealix22.butterforspotify.navigation.ButterRoute
+import com.elisealix22.butterforspotify.player.MockPlayer
 import com.elisealix22.butterforspotify.player.Player
 import com.elisealix22.butterforspotify.player.PlayerBar
-import com.elisealix22.butterforspotify.ui.Player1
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
@@ -135,6 +135,6 @@ fun TabPreviews() {
 @Composable
 fun MainScreenPreview() {
     ButterForSpotifyTheme {
-        MainScreen(UiState.Success(Player1))
+        MainScreen(UiState.Success(MockPlayer))
     }
 }
