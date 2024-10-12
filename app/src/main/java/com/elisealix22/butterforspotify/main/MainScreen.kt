@@ -1,5 +1,6 @@
 package com.elisealix22.butterforspotify.main
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
@@ -25,43 +26,56 @@ import com.elisealix22.butterforspotify.music.MusicScreen
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTab
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTabs
 import com.elisealix22.butterforspotify.navigation.ButterRoute
+import com.elisealix22.butterforspotify.player.MockPlayer
+import com.elisealix22.butterforspotify.player.Player
+import com.elisealix22.butterforspotify.player.PlayerBar
+import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    playerUiState: UiState<Player>
+) {
     val navController = rememberNavController()
     Scaffold(
-        bottomBar = { BottomBar(navController) }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavigationTabs.first().route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable<ButterRoute.Music> {
-                MusicScreen()
+        bottomBar = {
+            Column {
+                PlayerBar(playerUiState = playerUiState)
+                BottomNavigationBar(navController)
             }
-            composable<ButterRoute.Audio> {
-                Text(
-                    modifier = Modifier.padding(Dimen.Padding),
-                    text = "Episodes coming soon."
-                )
+        }
+    ) { innerPadding ->
+        Column {
+            NavHost(
+                navController = navController,
+                startDestination = BottomNavigationTabs.first().route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable<ButterRoute.Music> {
+                    MusicScreen(playerUiState = playerUiState)
+                }
+                composable<ButterRoute.Audio> {
+                    Text(
+                        modifier = Modifier.padding(Dimen.Padding),
+                        text = "Episodes coming soon."
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun BottomBar(
+private fun BottomNavigationBar(
     navController: NavController
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     NavigationBar {
         BottomNavigationTabs.forEach { tab ->
-            BottomBarItem(
+            BottomNavigationBarItem(
                 tab = tab,
                 isSelected = currentDestination?.hierarchy?.any {
                     it.hasRoute(tab.route::class)
@@ -81,7 +95,7 @@ private fun BottomBar(
 }
 
 @Composable
-private fun RowScope.BottomBarItem(
+private fun RowScope.BottomNavigationBarItem(
     tab: BottomNavigationTab,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -107,7 +121,7 @@ fun TabPreviews() {
     ButterForSpotifyTheme {
         Row {
             BottomNavigationTabs.forEachIndexed { index, tab ->
-                BottomBarItem(
+                BottomNavigationBarItem(
                     tab = tab,
                     isSelected = index == 0,
                     onClick = { }
@@ -121,6 +135,6 @@ fun TabPreviews() {
 @Composable
 fun MainScreenPreview() {
     ButterForSpotifyTheme {
-        MainScreen()
+        MainScreen(UiState.Success(MockPlayer))
     }
 }

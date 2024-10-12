@@ -60,7 +60,9 @@ dependencies {
     implementation(libs.kotlinx.serialization)
 
     // External libraries
+    implementation(files("spotify-app-remote-release-0.8.0.aar"))
     implementation(libs.spotify.auth)
+    implementation(libs.gson)
     implementation(libs.coil.compose)
     implementation(libs.coil.network)
 

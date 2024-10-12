@@ -1,48 +1,48 @@
 package com.elisealix22.butterforspotify.music
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
+import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.data.model.SpotifyImage
 import com.elisealix22.butterforspotify.data.model.album.Album
 import com.elisealix22.butterforspotify.data.model.album.AlbumType
+import com.elisealix22.butterforspotify.data.model.album.ReleaseDatePrecision
 import com.elisealix22.butterforspotify.data.model.artist.Artist
+import com.elisealix22.butterforspotify.player.MockPlayer
+import com.elisealix22.butterforspotify.player.Player
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
-import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
-import kotlin.random.Random
 
 @Composable
 fun MusicScreen(
-    viewModel: MusicViewModel = viewModel()
+    viewModel: MusicViewModel = viewModel(),
+    playerUiState: UiState<Player>
 ) {
     LifecycleStartEffect(viewModel) {
         viewModel.fetchFeaturedPlaylists()
@@ -52,21 +52,24 @@ fun MusicScreen(
     val lazyListState = rememberLazyListState()
     MusicUiScaffold(
         uiState = uiState,
-        lazyListState = lazyListState
+        lazyListState = lazyListState,
+        playerUiState = playerUiState
     )
 }
 
 @Composable
 private fun MusicUiScaffold(
     uiState: UiState<List<Album>>,
-    lazyListState: LazyListState
+    lazyListState: LazyListState,
+    playerUiState: UiState<Player>
 ) {
     UiStateScaffold(
         uiState = uiState
     ) {
         MusicContent(
             items = uiState.data.orEmpty(),
-            lazyListState = lazyListState
+            lazyListState = lazyListState,
+            playerUiState = playerUiState
         )
     }
 }
@@ -80,7 +83,8 @@ private data class ColumnConfig(
 private fun MusicContent(
     modifier: Modifier = Modifier,
     items: List<Album>,
-    lazyListState: LazyListState
+    lazyListState: LazyListState,
+    playerUiState: UiState<Player>
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
@@ -96,13 +100,6 @@ private fun MusicContent(
     val rowData = remember(items, columnConfig.numColumns) {
         items.chunked(columnConfig.numColumns)
     }
-    val colors = listOf(
-        ThemeColor.Tangerine,
-        ThemeColor.Orange,
-        ThemeColor.Citrus,
-        ThemeColor.Blue,
-        ThemeColor.Pink
-    )
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = lazyListState
@@ -126,14 +123,17 @@ private fun MusicContent(
                         modifier = Modifier
                             .width(columnConfig.columnSize + columnPadding)
                             .padding(end = columnPadding)
+                            .clickable(
+                                onClickLabel = stringResource(R.string.play_x, album.name),
+                                enabled = playerUiState is UiState.Success
+                            ) {
+                                playerUiState.data?.spotifyApis?.playerApi?.play(album.uri)
+                            }
                     ) {
-                        AsyncImage(
-                            modifier = Modifier
-                                .size(columnConfig.columnSize)
-                                .clip(RoundedCornerShape(2.dp)),
-                            model = album.images.firstOrNull()?.url,
-                            contentDescription = album.name,
-                            error = ColorPainter(colors[Random.Default.nextInt(colors.size)])
+                        AlbumImage(
+                            size = columnConfig.columnSize,
+                            url = album.images.firstOrNull()?.url,
+                            contentDescription = album.name
                         )
                         Text(
                             modifier = Modifier.padding(top = Dimen.PaddingHalf),
@@ -174,7 +174,11 @@ fun MusicScreenPreview() {
             ),
             artists = listOf(
                 Artist(id = "artist1", name = "Arist 1 with a really long name")
-            )
+            ),
+            uri = "uri://1",
+            totalTracks = 3,
+            releaseDate = "1989-06",
+            releaseDatePrecision = ReleaseDatePrecision.MONTH
         ),
         Album(
             id = "Album 2",
@@ -190,14 +194,19 @@ fun MusicScreenPreview() {
             artists = listOf(
                 Artist(id = "artist1", name = "Arist 1"),
                 Artist(id = "artist2", name = "Arist 2")
-            )
+            ),
+            uri = "uri://2",
+            totalTracks = 10,
+            releaseDate = "2021-10-01",
+            releaseDatePrecision = ReleaseDatePrecision.DAY
         )
     )
     val uiState = UiState.Success(data = albums)
     ButterForSpotifyTheme {
         MusicUiScaffold(
             uiState = uiState,
-            lazyListState = rememberLazyListState()
+            lazyListState = rememberLazyListState(),
+            playerUiState = UiState.Success(MockPlayer)
         )
     }
 }

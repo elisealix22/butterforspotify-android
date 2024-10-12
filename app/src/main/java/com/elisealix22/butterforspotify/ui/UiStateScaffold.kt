@@ -63,11 +63,7 @@ fun <T> UiStateScaffold(
                     }
                 }
                 is UiState.Error -> {
-                    val errorMessage = when (uiState.message) {
-                        is UiErrorMessage.Message -> uiState.message.text
-                        is UiErrorMessage.MessageResId -> stringResource(uiState.message.textResId)
-                        null -> stringResource(R.string.ui_state_error)
-                    }
+                    val errorMessage = uiState.message.text()
                     if (uiState.showInSnackbar) {
                         LaunchedEffect(uiState) {
                             snackbarHostState.showSnackbar(errorMessage)
