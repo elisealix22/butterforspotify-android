@@ -1,5 +1,7 @@
 package com.elisealix22.butterforspotify.ui
 
+import kotlinx.coroutines.flow.StateFlow
+
 sealed class UiState<T>(
     open val data: T? = null
 ) {
@@ -24,3 +26,11 @@ sealed class UiState<T>(
         val isEmpty: Boolean = (data as? List<*>)?.isEmpty() == true
     ) : UiState<T>(data)
 }
+
+fun <T> UiState<T>.isLoading() = this is UiState.Loading<*>
+
+fun <T> UiState<T>.isLoadingOrInitial() = this is UiState.Loading<*> || this is UiState.Initial<*>
+
+fun <T> UiState<T>.isError() = this is UiState.Error<*>
+
+fun <T> UiState<T>.isSuccess() = this is UiState.Success<*>

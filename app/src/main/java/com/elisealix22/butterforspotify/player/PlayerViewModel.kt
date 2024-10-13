@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.elisealix22.butterforspotify.data.BuildConfig
 import com.elisealix22.butterforspotify.ui.UiState
+import com.elisealix22.butterforspotify.ui.isLoadingOrInitial
 import com.elisealix22.butterforspotify.ui.toUiErrorMessage
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector.ConnectionListener
@@ -16,18 +17,22 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         private const val TAG = "PlayerViewModel"
+        private const val APP_REMOTE_TAG = "SpotifyAppRemote"
+        private const val PLAYER_STATE_TAG = "PlayerState"
     }
 
     private val spotifyConnectionParams = ConnectionParams.Builder(BuildConfig.SPOTIFY_CLIENT_ID)
@@ -35,11 +40,44 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         .showAuthView(false)
         .build()
 
-    private val spotifyAppRemote = MutableStateFlow<SpotifyAppRemote?>(null)
-    private var spotifyPlayerStateSubscription: Subscription<PlayerState>? = null
+    private val spotifyAppRemote =
+        MutableStateFlow<UiState<SpotifyAppRemote>>(UiState.Loading(null))
+    private val playerState = MutableStateFlow<UiState<PlayerState>>(UiState.Loading(null))
+    private val playerStateSubscription = MutableStateFlow<Subscription<PlayerState>?>(null)
 
-    private val _uiState = MutableStateFlow<UiState<Player>>(UiState.Loading(null))
-    val uiState: StateFlow<UiState<Player>> = _uiState.asStateFlow()
+    val uiState: StateFlow<UiState<Player>> =
+        combine(spotifyAppRemote, playerState) { appRemote, state ->
+            when {
+                appRemote.isLoadingOrInitial() || state.isLoadingOrInitial() -> {
+                    val cachedPlayerState = state.data.let {
+                        if (it == null) null else Player(playerState = it, spotifyApis = null)
+                    }
+                    UiState.Loading(data = cachedPlayerState)
+                }
+                appRemote is UiState.Error -> {
+                    UiState.Error<Player>(data = null, message = appRemote.message)
+                }
+                state is UiState.Error -> {
+                    UiState.Error<Player>(data = null, message = state.message)
+                }
+                appRemote is UiState.Success && state is UiState.Success -> {
+                    UiState.Success(
+                        data = Player(
+                            spotifyApis = appRemote.data.toSpotifyApis(),
+                            playerState = state.data
+                        )
+                    )
+                }
+                else -> {
+                    Log.e(TAG, "Unexpected combined state")
+                    UiState.Error<Player>(null, null)
+                }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = UiState.Loading(null)
+        )
 
     init {
         SpotifyAppRemote.setDebugMode(BuildConfig.DEBUG)
@@ -49,50 +87,38 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             connectSpotifyAppRemote()
                 .onStart {
-                    Log.d(TAG, "Connecting to Spotify app remote")
-                    val cachedPlayerState = _uiState.value.data?.playerState.let {
-                        if (it == null) null else Player(playerState = it, spotifyApis = null)
-                    }
-                    _uiState.value = UiState.Loading(data = cachedPlayerState)
+                    Log.d(TAG, "Connecting to $APP_REMOTE_TAG")
+                    spotifyAppRemote.value = UiState.Loading(null)
                 }
                 .onCompletion {
-                    Log.d(TAG, "App remote channel completed")
+                    Log.d(TAG, "$APP_REMOTE_TAG channel completed")
                 }
                 .catch { error ->
-                    Log.e(TAG, "Failed to connect to Spotify remote", error)
-                    _uiState.value = UiState.Error(
+                    Log.e(TAG, "Failed to connect to $APP_REMOTE_TAG", error)
+                    spotifyAppRemote.value = UiState.Error(
                         data = null,
                         message = error.toUiErrorMessage()
                     )
                 }
                 .collect { remote ->
-                    Log.d(TAG, "Connected to Spotify app remote")
-                    spotifyAppRemote.value = remote
+                    Log.d(TAG, "Connected to $APP_REMOTE_TAG")
+                    spotifyAppRemote.value = UiState.Success(remote)
                     remote.observePlayerState()
                 }
         }
     }
 
-    private fun SpotifyAppRemote.observePlayerState() {
-        spotifyPlayerStateSubscription?.cancel()
-        spotifyPlayerStateSubscription = this.playerApi
-            .subscribeToPlayerState()
-            .setEventCallback { playerState ->
-                Log.d(TAG, "PlayerState callback received")
-                _uiState.value = UiState.Success(
-                    Player(
-                        playerState = playerState,
-                        spotifyApis = this.toSpotifyApis()
-                    )
-                )
-            }
-            .setErrorCallback { error ->
-                Log.e(TAG, "PlayerState callback error", error)
-                _uiState.value = UiState.Error(
-                    data = null,
-                    message = error.toUiErrorMessage()
-                )
-            } as Subscription<PlayerState>
+    fun disconnect() {
+        playerStateSubscription.value?.let {
+            Log.d(TAG, "Canceled $PLAYER_STATE_TAG subscription")
+            it.cancel()
+            playerStateSubscription.value = null
+        }
+        spotifyAppRemote.value.data?.let {
+            Log.d(TAG, "Disconnected from $APP_REMOTE_TAG")
+            SpotifyAppRemote.disconnect(it)
+            spotifyAppRemote.value = UiState.Initial()
+        }
     }
 
     @Throws(Exception::class)
@@ -104,13 +130,12 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             object : ConnectionListener {
                 override fun onConnected(remote: SpotifyAppRemote?) {
                     if (remote == null) {
-                        close(IllegalStateException("Invalid Spotify app remote received"))
+                        close(IllegalStateException("Invalid $APP_REMOTE_TAG received"))
                         return
                     }
                     trySendBlocking(remote)
                     close()
                 }
-
                 override fun onFailure(throwable: Throwable?) {
                     close(throwable)
                 }
@@ -119,12 +144,21 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         awaitClose()
     }
 
-    fun disconnect() {
-        spotifyPlayerStateSubscription?.cancel()
-        spotifyAppRemote.value?.let {
-            Log.d(TAG, "Disconnected from Spotify app remote")
-            SpotifyAppRemote.disconnect(it)
-            spotifyAppRemote.value = null
-        }
+    private fun SpotifyAppRemote.observePlayerState() {
+        playerState.value = UiState.Loading(null)
+        playerStateSubscription.value?.cancel()
+        playerStateSubscription.value = this.playerApi
+            .subscribeToPlayerState()
+            .setEventCallback { state ->
+                Log.d(TAG, "$PLAYER_STATE_TAG callback received")
+                playerState.value = UiState.Success(state)
+            }
+            .setErrorCallback { error ->
+                Log.e(TAG, "$PLAYER_STATE_TAG callback error", error)
+                playerState.value = UiState.Error(
+                    data = null,
+                    message = error.toUiErrorMessage()
+                )
+            } as Subscription<PlayerState>
     }
 }
