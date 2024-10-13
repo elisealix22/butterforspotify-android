@@ -1,7 +1,5 @@
 package com.elisealix22.butterforspotify.ui
 
-import kotlinx.coroutines.flow.StateFlow
-
 sealed class UiState<T>(
     open val data: T? = null
 ) {
