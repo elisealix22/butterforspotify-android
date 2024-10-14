@@ -48,17 +48,17 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     val uiState: StateFlow<UiState<Player>> =
         combine(spotifyAppRemote, playerState) { appRemote, state ->
             when {
-                appRemote.isLoadingOrInitial() || state.isLoadingOrInitial() -> {
-                    val cachedPlayerState = state.data.let {
-                        if (it == null) null else Player(playerState = it, spotifyApis = null)
-                    }
-                    UiState.Loading(data = cachedPlayerState)
-                }
                 appRemote is UiState.Error -> {
                     UiState.Error<Player>(data = null, message = appRemote.message)
                 }
                 state is UiState.Error -> {
                     UiState.Error<Player>(data = null, message = state.message)
+                }
+                appRemote.isLoadingOrInitial() || state.isLoadingOrInitial() -> {
+                    val cachedPlayerState = state.data.let {
+                        if (it == null) null else Player(playerState = it, spotifyApis = null)
+                    }
+                    UiState.Loading(data = cachedPlayerState)
                 }
                 appRemote is UiState.Success && state is UiState.Success -> {
                     UiState.Success(
@@ -128,15 +128,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             getApplication(),
             spotifyConnectionParams,
             object : ConnectionListener {
-                override fun onConnected(remote: SpotifyAppRemote?) {
-                    if (remote == null) {
-                        close(IllegalStateException("Invalid $APP_REMOTE_TAG received"))
-                        return
-                    }
+                override fun onConnected(remote: SpotifyAppRemote) {
                     trySendBlocking(remote)
                     close()
                 }
-                override fun onFailure(throwable: Throwable?) {
+                override fun onFailure(throwable: Throwable) {
                     close(throwable)
                 }
             }
