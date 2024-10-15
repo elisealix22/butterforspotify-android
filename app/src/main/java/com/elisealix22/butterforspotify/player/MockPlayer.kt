@@ -36,12 +36,33 @@ private val Track1 = Track(
     false
 )
 
+private val Track2 = Track(
+    Artist1,
+    listOf(Artist1, Artist2),
+    Album1,
+    1000L,
+    "SWEET HONEY BUCKIN' (extended version) (remix) (really long title)",
+    "uri://sweet-honey-buckin",
+    ImageUri1,
+    false,
+    false
+)
+
 private val PlayerOptions1 = PlayerOptions(false, 1)
 
 private val PlayerRestrictions1 = PlayerRestrictions(false, false, false, false, false, false)
 
 private val PlayerState1 = PlayerState(
     Track1,
+    false,
+    1.0F,
+    30L,
+    PlayerOptions1,
+    PlayerRestrictions1
+)
+
+private val PlayerState2 = PlayerState(
+    Track2,
     false,
     1.0F,
     30L,
@@ -108,4 +129,9 @@ val MockPlayer = Player(
 val MockPlayerWithCachedState = Player(
     playerState = PlayerState1,
     spotifyApis = null
+)
+
+val MockPlayerWithLongTrackTitle = Player(
+    playerState = PlayerState2,
+    spotifyApis = SpotifyApis(imagesApi = imagesApi, playerApi = playerApi)
 )
