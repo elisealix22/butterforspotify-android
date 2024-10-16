@@ -49,10 +49,18 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         combine(spotifyAppRemote, playerState) { appRemote, state ->
             when {
                 appRemote is UiState.Error -> {
-                    UiState.Error<Player>(data = null, message = appRemote.message)
+                    UiState.Error<Player>(
+                        data = null,
+                        message = appRemote.message,
+                        onTryAgain = appRemote.onTryAgain
+                    )
                 }
                 state is UiState.Error -> {
-                    UiState.Error<Player>(data = null, message = state.message)
+                    UiState.Error<Player>(
+                        data = null,
+                        message = state.message,
+                        onTryAgain = state.onTryAgain
+                    )
                 }
                 appRemote.isLoadingOrInitial() || state.isLoadingOrInitial() -> {
                     val cachedPlayerState = state.data.let {
@@ -69,8 +77,12 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     )
                 }
                 else -> {
-                    Log.e(TAG, "Unexpected combined state")
-                    UiState.Error<Player>(null, null)
+                    UiState.Error<Player>(
+                        data = null,
+                        message = IllegalStateException("Unexpected combined state")
+                            .toUiErrorMessage(),
+                        onTryAgain = { connect() }
+                    )
                 }
             }
         }.stateIn(
@@ -97,13 +109,14 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     Log.e(TAG, "Failed to connect to $APP_REMOTE_TAG", error)
                     spotifyAppRemote.value = UiState.Error(
                         data = null,
-                        message = error.toUiErrorMessage()
+                        message = error.toUiErrorMessage(),
+                        onTryAgain = { connect() }
                     )
                 }
                 .collect { remote ->
                     Log.d(TAG, "Connected to $APP_REMOTE_TAG")
                     spotifyAppRemote.value = UiState.Success(remote)
-                    remote.observePlayerState()
+                    subscribeToSpotifyPlayerState()
                 }
         }
     }
@@ -140,10 +153,21 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         awaitClose()
     }
 
-    private fun SpotifyAppRemote.observePlayerState() {
+    private fun subscribeToSpotifyPlayerState() {
+        val remote = spotifyAppRemote.value.data
+        if (remote == null) {
+            playerState.value = UiState.Error(
+                data = null,
+                message = IllegalStateException(
+                    "Can't subscribe to $PLAYER_STATE_TAG without $APP_REMOTE_TAG"
+                ).toUiErrorMessage(),
+                onTryAgain = { connect() }
+            )
+            return
+        }
         playerState.value = UiState.Loading(null)
         playerStateSubscription.value?.cancel()
-        playerStateSubscription.value = this.playerApi
+        playerStateSubscription.value = remote.playerApi
             .subscribeToPlayerState()
             .setEventCallback { state ->
                 Log.d(TAG, "$PLAYER_STATE_TAG callback received")
@@ -153,7 +177,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 Log.e(TAG, "$PLAYER_STATE_TAG callback error", error)
                 playerState.value = UiState.Error(
                     data = null,
-                    message = error.toUiErrorMessage()
+                    message = error.toUiErrorMessage(),
+                    onTryAgain = { subscribeToSpotifyPlayerState() }
                 )
             } as Subscription<PlayerState>
     }
