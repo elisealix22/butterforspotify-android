@@ -151,9 +151,9 @@ private fun RowScope.Connecting() {
     Text(
         modifier = Modifier
             .align(Alignment.CenterVertically)
-            .padding(start = Dimen.PaddingHalf),
+            .padding(start = Dimen.PaddingHalf, end = Dimen.Padding),
         text = stringResource(R.string.connecting_to_spotify),
-        maxLines = 1,
+        maxLines = 2,
         overflow = TextOverflow.Ellipsis
     )
 }
@@ -177,9 +177,9 @@ private fun RowScope.Error(uiErrorMessage: UiErrorMessage?, onTryAgain: (() -> U
     Text(
         modifier = Modifier
             .align(Alignment.CenterVertically)
-            .padding(start = Dimen.PaddingHalf),
+            .padding(start = Dimen.PaddingHalf, end = Dimen.Padding),
         text = uiErrorMessage.text(),
-        maxLines = 1,
+        maxLines = 2,
         overflow = TextOverflow.Ellipsis
     )
 }
@@ -221,6 +221,21 @@ fun PlayerBarLoadingWithContentPreview() {
 @Composable
 fun PlayerBarErrorPreview() {
     val uiState = UiState.Error<Player>(data = null, onTryAgain = {})
+    ButterForSpotifyTheme {
+        Surface {
+            PlayerBar(playerUiState = uiState)
+        }
+    }
+}
+
+@ThemePreview
+@Composable
+fun PlayerBarErrorLongMessagePreview() {
+    val uiState = UiState.Error<Player>(
+        data = null,
+        message = UiErrorMessage.Message("Really long error message connecting to Spotify"),
+        onTryAgain = {}
+    )
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)
