@@ -1,14 +1,16 @@
 package com.elisealix22.butterforspotify.player
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +30,7 @@ import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
 import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
+import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 private val PlayerBarImageSize = 48.dp
@@ -48,7 +51,7 @@ fun PlayerBar(
         ) {
             when (playerUiState) {
                 is UiState.Success -> PlayerContent(playerUiState.data)
-                is UiState.Error -> Error(playerUiState.message)
+                is UiState.Error -> Error(playerUiState.message, playerUiState.onTryAgain)
                 is UiState.Loading, is UiState.Initial -> {
                     playerUiState.data.let {
                         if (it == null) Connecting() else PlayerContent(it)
@@ -133,11 +136,17 @@ private fun RowScope.TrackInfo(player: Player) {
 
 @Composable
 private fun RowScope.Connecting() {
-    Spacer(
+    Box(
         modifier = Modifier
             .size(PlayerBarImageSize)
             .align(Alignment.CenterVertically)
-    )
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier
+                .size(32.dp)
+                .align(Alignment.Center)
+        )
+    }
     Text(
         modifier = Modifier
             .align(Alignment.CenterVertically)
@@ -149,12 +158,21 @@ private fun RowScope.Connecting() {
 }
 
 @Composable
-private fun RowScope.Error(uiErrorMessage: UiErrorMessage?) {
-    Spacer(
+private fun RowScope.Error(uiErrorMessage: UiErrorMessage?, onTryAgain: (() -> Unit)?) {
+    IconButton(
         modifier = Modifier
             .size(PlayerBarImageSize)
-            .align(Alignment.CenterVertically)
-    )
+            .align(Alignment.CenterVertically),
+        onClick = onTryAgain ?: {},
+        colors = IconButtonDefaults.iconButtonColors().copy(
+            contentColor = ThemeColor.Tangerine
+        )
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_refresh_24),
+            contentDescription = stringResource(R.string.ui_state_try_again)
+        )
+    }
     Text(
         modifier = Modifier
             .align(Alignment.CenterVertically)
@@ -200,19 +218,8 @@ fun PlayerBarLoadingWithContentPreview() {
 
 @ThemePreview
 @Composable
-fun PlayerBarErrorTryAgainPreview() {
-    val uiState = UiState.Error<Player>(data = null, onTryAgain = {})
-    ButterForSpotifyTheme {
-        Surface {
-            PlayerBar(playerUiState = uiState)
-        }
-    }
-}
-
-@ThemePreview
-@Composable
 fun PlayerBarErrorPreview() {
-    val uiState = UiState.Error<Player>(data = null, onTryAgain = null)
+    val uiState = UiState.Error<Player>(data = null, onTryAgain = {})
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)
