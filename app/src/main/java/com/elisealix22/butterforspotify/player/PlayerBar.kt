@@ -38,10 +38,11 @@ fun PlayerBar(
     playerUiState: UiState<Player>
 ) {
     Surface(
+        modifier = modifier,
         shadowElevation = 8.dp
     ) {
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimen.Padding, vertical = Dimen.PaddingHalf)
         ) {
@@ -50,7 +51,7 @@ fun PlayerBar(
                 is UiState.Error -> Error(playerUiState.message)
                 is UiState.Loading, is UiState.Initial -> {
                     playerUiState.data.let {
-                        if (it == null) Connecting() else PlayerContent(player = it)
+                        if (it == null) Connecting() else PlayerContent(it)
                     }
                 }
             }
@@ -60,8 +61,8 @@ fun PlayerBar(
 
 @Composable
 private fun RowScope.PlayerContent(player: Player) {
-    TrackInfo(player = player)
-    PlayButton(player = player)
+    TrackInfo(player)
+    PlayButton(player)
 }
 
 @Composable
