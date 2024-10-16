@@ -143,8 +143,9 @@ private fun RowScope.Connecting() {
     ) {
         CircularProgressIndicator(
             modifier = Modifier
-                .size(32.dp)
-                .align(Alignment.Center)
+                .size(24.dp)
+                .align(Alignment.Center),
+            strokeWidth = 3.dp
         )
     }
     Text(
