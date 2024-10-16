@@ -200,8 +200,19 @@ fun PlayerBarLoadingWithContentPreview() {
 
 @ThemePreview
 @Composable
+fun PlayerBarErrorTryAgainPreview() {
+    val uiState = UiState.Error<Player>(data = null, onTryAgain = {})
+    ButterForSpotifyTheme {
+        Surface {
+            PlayerBar(playerUiState = uiState)
+        }
+    }
+}
+
+@ThemePreview
+@Composable
 fun PlayerBarErrorPreview() {
-    val uiState = UiState.Error<Player>(null)
+    val uiState = UiState.Error<Player>(data = null, onTryAgain = null)
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)

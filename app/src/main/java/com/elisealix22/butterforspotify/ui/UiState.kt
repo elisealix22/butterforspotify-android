@@ -11,7 +11,8 @@ sealed class UiState<T>(
         override val data: T?,
         val message: UiErrorMessage? = null,
         val showInSnackbar: Boolean = (data != null && data !is List<*>) ||
-            (data as? List<*>)?.isNotEmpty() == true
+            (data as? List<*>)?.isNotEmpty() == true,
+        val onTryAgain: (() -> Unit)?
     ) : UiState<T>(data)
 
     data class Loading<T>(

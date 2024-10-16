@@ -29,7 +29,8 @@ class MusicViewModel : ViewModel() {
                 .catch { error ->
                     _uiState.value = UiState.Error(
                         message = error.toUiErrorMessage(),
-                        data = _uiState.value.data
+                        data = _uiState.value.data,
+                        onTryAgain = { fetchFeaturedPlaylists() }
                     )
                 }
                 .collect { response ->

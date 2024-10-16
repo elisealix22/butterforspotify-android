@@ -35,6 +35,7 @@ class SignInViewModel : ViewModel() {
                 _uiState.value = UiState.Error(
                     data = Unit,
                     message = error.toUiErrorMessage(),
+                    onTryAgain = null,
                     showInSnackbar = true
                 )
             }.collect {
@@ -55,6 +56,7 @@ class SignInViewModel : ViewModel() {
         _uiState.value = UiState.Error(
             data = Unit,
             message = UiErrorMessage.Message(error),
+            onTryAgain = null,
             showInSnackbar = true
         )
     }
