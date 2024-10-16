@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,7 +38,6 @@ import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
 import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
-import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
@@ -124,14 +122,14 @@ private fun MusicContent(
                 row.forEach { album ->
                     Album(
                         modifier = Modifier
-                        .width(columnConfig.columnSize + columnPadding)
-                        .padding(end = columnPadding)
-                        .clickable(
-                            onClickLabel = stringResource(R.string.play_x, album.name),
-                            enabled = playerUiState is UiState.Success
-                        ) {
-                            playerUiState.data?.spotifyApis?.playerApi?.play(album.uri)
-                        },
+                            .width(columnConfig.columnSize + columnPadding)
+                            .padding(end = columnPadding)
+                            .clickable(
+                                onClickLabel = stringResource(R.string.play_x, album.name),
+                                enabled = playerUiState is UiState.Success
+                            ) {
+                                playerUiState.data?.spotifyApis?.playerApi?.play(album.uri)
+                            },
                         album = album,
                         size = columnConfig.columnSize
                     )
