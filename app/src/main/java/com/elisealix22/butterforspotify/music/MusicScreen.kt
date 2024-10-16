@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -37,6 +36,8 @@ import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
+import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
+import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
@@ -119,7 +120,7 @@ private fun MusicContent(
                     )
             ) {
                 row.forEach { album ->
-                    Column(
+                    Album(
                         modifier = Modifier
                             .width(columnConfig.columnSize + columnPadding)
                             .padding(end = columnPadding)
@@ -128,32 +129,46 @@ private fun MusicContent(
                                 enabled = playerUiState is UiState.Success
                             ) {
                                 playerUiState.data?.spotifyApis?.playerApi?.play(album.uri)
-                            }
-                    ) {
-                        AlbumImage(
-                            size = columnConfig.columnSize,
-                            url = album.images.firstOrNull()?.url,
-                            contentDescription = album.name
-                        )
-                        Text(
-                            modifier = Modifier.padding(top = Dimen.PaddingHalf),
-                            text = album.name,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        val artistNames = remember(album.artists) {
-                            album.artists.joinToString { it.name }
-                        }
-                        Text(
-                            text = artistNames,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                            },
+                        album = album,
+                        size = columnConfig.columnSize
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun Album(
+    modifier: Modifier = Modifier,
+    album: Album,
+    size: Dp
+) {
+    Column(
+        modifier = modifier
+    ) {
+        AlbumImage(
+            size = size,
+            url = album.images.firstOrNull()?.url,
+            contentDescription = album.name
+        )
+        Text(
+            modifier = Modifier.padding(top = Dimen.PaddingHalf),
+            text = album.name,
+            style = TextStyleAlbumTitle,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        val artistNames = remember(album.artists) {
+            album.artists.joinToString { it.name }
+        }
+        Text(
+            text = artistNames,
+            style = TextStyleArtistTitle,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

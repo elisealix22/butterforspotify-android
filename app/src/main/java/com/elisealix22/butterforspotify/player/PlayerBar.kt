@@ -1,6 +1,6 @@
 package com.elisealix22.butterforspotify.player
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +12,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -25,6 +26,8 @@ import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.text
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
+import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
+import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 private val PlayerBarImageSize = 48.dp
@@ -35,10 +38,11 @@ fun PlayerBar(
     playerUiState: UiState<Player>
 ) {
     Surface(
+        modifier = modifier,
         shadowElevation = 8.dp
     ) {
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimen.Padding, vertical = Dimen.PaddingHalf)
         ) {
@@ -58,7 +62,6 @@ fun PlayerBar(
 @Composable
 private fun RowScope.PlayerContent(player: Player) {
     TrackInfo(player)
-    Spacer(modifier = Modifier.weight(1F))
     PlayButton(player)
 }
 
@@ -92,13 +95,9 @@ private fun RowScope.PlayButton(player: Player) {
 }
 
 @Composable
-private fun RowScope.TrackInfo(
-    player: Player
-) {
+private fun RowScope.TrackInfo(player: Player) {
     AsyncAlbumImage(
-        modifier = Modifier
-            .padding(end = Dimen.PaddingHalf)
-            .align(Alignment.CenterVertically),
+        modifier = Modifier.align(Alignment.CenterVertically),
         imageUri = player.playerState.track.imageUri,
         imagesApi = player.spotifyApis?.imagesApi,
         imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
@@ -108,10 +107,28 @@ private fun RowScope.TrackInfo(
             player.playerState.track.name
         )
     )
-    Text(
-        modifier = Modifier.align(Alignment.CenterVertically),
-        text = player.playerState.track.name
-    )
+    Column(
+        modifier = Modifier
+            .align(Alignment.CenterVertically)
+            .weight(1F)
+            .padding(start = Dimen.PaddingHalf)
+    ) {
+        Text(
+            text = player.playerState.track.name,
+            style = TextStyleAlbumTitle,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        val artistNames = remember(player.playerState.track.artists) {
+            player.playerState.track.artists.joinToString { it.name }
+        }
+        Text(
+            text = artistNames,
+            style = TextStyleArtistTitle,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
 }
 
 @Composable
@@ -122,7 +139,9 @@ private fun RowScope.Connecting() {
             .align(Alignment.CenterVertically)
     )
     Text(
-        modifier = Modifier.align(Alignment.CenterVertically),
+        modifier = Modifier
+            .align(Alignment.CenterVertically)
+            .padding(start = Dimen.PaddingHalf),
         text = stringResource(R.string.connecting_to_spotify),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
@@ -137,7 +156,9 @@ private fun RowScope.Error(uiErrorMessage: UiErrorMessage?) {
             .align(Alignment.CenterVertically)
     )
     Text(
-        modifier = Modifier.align(Alignment.CenterVertically),
+        modifier = Modifier
+            .align(Alignment.CenterVertically)
+            .padding(start = Dimen.PaddingHalf),
         text = uiErrorMessage.text(),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
@@ -147,7 +168,7 @@ private fun RowScope.Error(uiErrorMessage: UiErrorMessage?) {
 @ThemePreview
 @Composable
 fun PlayerBarSuccessPreview() {
-    val uiState = UiState.Success(MockPlayer)
+    val uiState = UiState.Success(MockPlayerWithLongTrackTitle)
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)

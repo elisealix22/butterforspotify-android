@@ -24,13 +24,14 @@ internal fun Throwable.toUiErrorMessage(): UiErrorMessage =
         }
         else -> {
             if (BuildConfig.DEBUG) {
-                message.let {
+                val debugErrorMessage = message.let {
                     if (it.isNullOrBlank()) {
-                        UiErrorMessage.MessageResId(R.string.ui_state_error)
+                        this.javaClass.simpleName
                     } else {
-                        UiErrorMessage.Message(it)
+                        "${this.javaClass.simpleName}: $it"
                     }
                 }
+                UiErrorMessage.Message(debugErrorMessage)
             } else {
                 UiErrorMessage.MessageResId(R.string.ui_state_error)
             }
