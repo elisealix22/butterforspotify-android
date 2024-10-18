@@ -24,4 +24,7 @@
     <string name="pause">Pause</string>
     <string name="connecting_to_spotify">Connecting to Spotify…</string>
     <string name="album_art_content_description">%s album art</string>
+
+    <!-- Music -->
+    <string name="the_rotation">The rotation</string>
 </resources>

@@ -3,7 +3,7 @@ package com.elisealix22.butterforspotify.signin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elisealix22.butterforspotify.data.auth.AuthService
-import com.elisealix22.butterforspotify.ui.UiErrorMessage
+import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.toUiErrorMessage
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +55,7 @@ class SignInViewModel : ViewModel() {
     fun showSpotifyAuthError(error: String) {
         _uiState.value = UiState.Error(
             data = Unit,
-            message = UiErrorMessage.Message(error),
+            message = UiMessage.Message(error),
             onTryAgain = null,
             showInSnackbar = true
         )
