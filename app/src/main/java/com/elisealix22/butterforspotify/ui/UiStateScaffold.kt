@@ -75,7 +75,8 @@ fun <T> UiStateScaffold(
                 }
 
                 is UiState.Error -> {
-                    val errorMessage = uiState.message.text()
+                    val errorMessage =
+                        uiState.message?.text() ?: stringResource(R.string.ui_state_error)
                     val tryAgain = uiState.onTryAgain?.let {
                         TryAgain(
                             message = stringResource(R.string.ui_state_try_again),

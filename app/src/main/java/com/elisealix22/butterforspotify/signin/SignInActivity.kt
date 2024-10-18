@@ -24,26 +24,28 @@ import kotlinx.coroutines.launch
 
 class SignInActivity : ComponentActivity() {
 
-    // https://developer.spotify.com/documentation/web-api/concepts/scopes
-    private val scopes = arrayOf(
-        "app-remote-control",
-        "ugc-image-upload",
-        "user-read-playback-state",
-        "user-modify-playback-state",
-        "user-read-currently-playing",
-        "playlist-read-private",
-        "playlist-read-collaborative",
-        "playlist-modify-private",
-        "playlist-modify-public",
-        "user-follow-modify",
-        "user-follow-read",
-        "user-read-playback-position",
-        "user-top-read",
-        "user-read-recently-played",
-        "user-library-modify",
-        "user-library-read",
-        "user-read-private"
-    )
+    companion object {
+        // https://developer.spotify.com/documentation/web-api/concepts/scopes
+        private val scopes = arrayOf(
+            "app-remote-control",
+            "ugc-image-upload",
+            "user-read-playback-state",
+            "user-modify-playback-state",
+            "user-read-currently-playing",
+            "playlist-read-private",
+            "playlist-read-collaborative",
+            "playlist-modify-private",
+            "playlist-modify-public",
+            "user-follow-modify",
+            "user-follow-read",
+            "user-read-playback-position",
+            "user-top-read",
+            "user-read-recently-played",
+            "user-library-modify",
+            "user-library-read",
+            "user-read-private"
+        )
+    }
 
     private val state = BigInteger(130, SecureRandom()).toString(32)
 

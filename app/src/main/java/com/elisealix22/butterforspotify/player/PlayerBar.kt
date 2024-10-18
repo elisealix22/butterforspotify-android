@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
-import com.elisealix22.butterforspotify.ui.UiErrorMessage
+import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.text
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
@@ -159,7 +159,7 @@ private fun RowScope.Connecting() {
 }
 
 @Composable
-private fun RowScope.Error(uiErrorMessage: UiErrorMessage?, onTryAgain: (() -> Unit)?) {
+private fun RowScope.Error(uiErrorMessage: UiMessage?, onTryAgain: (() -> Unit)?) {
     IconButton(
         modifier = Modifier
             .size(PlayerBarImageSize)
@@ -178,7 +178,7 @@ private fun RowScope.Error(uiErrorMessage: UiErrorMessage?, onTryAgain: (() -> U
         modifier = Modifier
             .align(Alignment.CenterVertically)
             .padding(start = Dimen.PaddingHalf, end = Dimen.Padding),
-        text = uiErrorMessage.text(),
+        text = uiErrorMessage?.text() ?: stringResource(R.string.ui_state_error),
         maxLines = 2,
         overflow = TextOverflow.Ellipsis
     )
@@ -233,7 +233,7 @@ fun PlayerBarErrorPreview() {
 fun PlayerBarErrorLongMessagePreview() {
     val uiState = UiState.Error<Player>(
         data = null,
-        message = UiErrorMessage.Message("Really long error message connecting to Spotify"),
+        message = UiMessage.Message("Really long error message connecting to Spotify"),
         onTryAgain = {}
     )
     ButterForSpotifyTheme {

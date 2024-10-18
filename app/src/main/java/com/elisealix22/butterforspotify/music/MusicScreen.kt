@@ -1,6 +1,7 @@
 package com.elisealix22.butterforspotify.music
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,13 +34,17 @@ import com.elisealix22.butterforspotify.data.model.album.ReleaseDatePrecision
 import com.elisealix22.butterforspotify.data.model.artist.Artist
 import com.elisealix22.butterforspotify.player.MockPlayer
 import com.elisealix22.butterforspotify.player.Player
+import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
+import com.elisealix22.butterforspotify.ui.text
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
 import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
+import com.elisealix22.butterforspotify.ui.theme.TextStyleFullscreen
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
+import kotlin.math.ceil
 
 @Composable
 fun MusicScreen(
@@ -46,7 +52,7 @@ fun MusicScreen(
     playerUiState: UiState<Player>
 ) {
     LifecycleStartEffect(viewModel) {
-        viewModel.fetchFeaturedPlaylists()
+        viewModel.fetchMusic()
         onStopOrDispose { }
     }
     val uiState by viewModel.uiState.collectAsState()
@@ -60,7 +66,7 @@ fun MusicScreen(
 
 @Composable
 private fun MusicUiScaffold(
-    uiState: UiState<List<Album>>,
+    uiState: UiState<List<AlbumShelf>>,
     lazyListState: LazyListState,
     playerUiState: UiState<Player>
 ) {
@@ -75,64 +81,71 @@ private fun MusicUiScaffold(
     }
 }
 
-private data class ColumnConfig(
-    val numColumns: Int,
-    val columnSize: Dp
-)
-
 @Composable
 private fun MusicContent(
     modifier: Modifier = Modifier,
-    items: List<Album>,
+    items: List<AlbumShelf>,
     lazyListState: LazyListState,
     playerUiState: UiState<Player>
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp
-    val columnPadding = Dimen.Padding
-    val columnConfig = remember(screenWidth, screenHeight) {
-        val numColumns = if (screenWidth > screenHeight) 4 else 2
-        ColumnConfig(
-            numColumns = numColumns,
-            columnSize = (screenWidth - (columnPadding * (numColumns + 1))) / numColumns
-        )
-    }
-    val rowData = remember(items, columnConfig.numColumns) {
-        items.chunked(columnConfig.numColumns)
+    val visibleAlbums = if (screenWidth > screenHeight) 6.5F else 3.5F
+    val albumPadding = Dimen.Padding
+    val albumSize = remember(screenWidth) {
+        (screenWidth - (albumPadding * ceil(visibleAlbums).toInt())) / visibleAlbums
     }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = lazyListState
     ) {
-        itemsIndexed(rowData) { index, row ->
-            Row(
+        itemsIndexed(items) { index, shelf ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(
-                        top = if (index == 0) columnPadding else 0.dp,
-                        bottom = if (index == rowData.lastIndex) {
+                        top = if (index == 0) Dimen.Padding else 0.dp,
+                        bottom = if (index == items.lastIndex) {
                             Dimen.PaddingDouble
                         } else {
                             Dimen.PaddingOneAndAHalf
-                        },
-                        start = columnPadding
+                        }
                     )
             ) {
-                row.forEach { album ->
-                    Album(
-                        modifier = Modifier
-                            .width(columnConfig.columnSize + columnPadding)
-                            .padding(end = columnPadding)
-                            .clickable(
-                                onClickLabel = stringResource(R.string.play_x, album.name),
-                                enabled = playerUiState is UiState.Success
-                            ) {
-                                playerUiState.data?.spotifyApis?.playerApi?.play(album.uri)
-                            },
-                        album = album,
-                        size = columnConfig.columnSize
-                    )
+                Text(
+                    modifier = Modifier
+                        .padding(
+                            start = albumPadding,
+                            end = albumPadding,
+                            bottom = Dimen.Padding
+                        ),
+                    text = shelf.message.text(),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyleFullscreen
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    shelf.albums.forEachIndexed { index, album ->
+                        Album(
+                            modifier = Modifier
+                                .padding(
+                                    start = if (index == 0) albumPadding else 0.dp,
+                                    end = albumPadding
+                                )
+                                .clickable(
+                                    onClickLabel = stringResource(R.string.play_x, album.name),
+                                    enabled = playerUiState is UiState.Success
+                                ) {
+                                    playerUiState.data?.spotifyApis?.playerApi?.play(album.uri)
+                                },
+                            album = album,
+                            size = albumSize
+                        )
+                    }
                 }
             }
         }
@@ -146,7 +159,7 @@ private fun Album(
     size: Dp
 ) {
     Column(
-        modifier = modifier
+        modifier = modifier.width(size)
     ) {
         AlbumImage(
             size = size,
@@ -154,7 +167,8 @@ private fun Album(
             contentDescription = album.name
         )
         Text(
-            modifier = Modifier.padding(top = Dimen.PaddingHalf),
+            modifier = Modifier
+                .padding(top = Dimen.PaddingHalf),
             text = album.name,
             style = TextStyleAlbumTitle,
             maxLines = 1,
@@ -216,7 +230,9 @@ fun MusicScreenPreview() {
             releaseDatePrecision = ReleaseDatePrecision.DAY
         )
     )
-    val uiState = UiState.Success(data = albums)
+    val uiState = UiState.Success(
+        data = listOf(AlbumShelf(UiMessage.MessageResId(R.string.the_rotation), albums))
+    )
     ButterForSpotifyTheme {
         MusicUiScaffold(
             uiState = uiState,

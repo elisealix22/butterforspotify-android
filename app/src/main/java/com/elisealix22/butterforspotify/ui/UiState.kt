@@ -1,5 +1,9 @@
 package com.elisealix22.butterforspotify.ui
 
+import com.elisealix22.butterforspotify.R
+import com.elisealix22.butterforspotify.data.BuildConfig
+import com.elisealix22.butterforspotify.data.error.ServiceError
+
 sealed class UiState<T>(
     open val data: T? = null
 ) {
@@ -9,7 +13,7 @@ sealed class UiState<T>(
 
     data class Error<T>(
         override val data: T?,
-        val message: UiErrorMessage? = null,
+        val message: UiMessage? = null,
         val showInSnackbar: Boolean = (data != null && data !is List<*>) ||
             (data as? List<*>)?.isNotEmpty() == true,
         val onTryAgain: (() -> Unit)?
@@ -33,3 +37,29 @@ fun <T> UiState<T>.isLoadingOrInitial() = this is UiState.Loading<*> || this is 
 fun <T> UiState<T>.isError() = this is UiState.Error<*>
 
 fun <T> UiState<T>.isSuccess() = this is UiState.Success<*>
+
+fun Throwable.toUiErrorMessage(): UiMessage =
+    when (this) {
+        is ServiceError.IOError -> UiMessage.MessageResId(R.string.ui_state_network_error)
+        is ServiceError.ApiError -> this.userFriendlyMessage.let {
+            if (it.isNullOrBlank()) {
+                UiMessage.MessageResId(R.string.ui_state_error)
+            } else {
+                UiMessage.Message(it)
+            }
+        }
+        else -> {
+            if (BuildConfig.DEBUG) {
+                val debugErrorMessage = message.let {
+                    if (it.isNullOrBlank()) {
+                        this.javaClass.simpleName
+                    } else {
+                        "${this.javaClass.simpleName}: $it"
+                    }
+                }
+                UiMessage.Message(debugErrorMessage)
+            } else {
+                UiMessage.MessageResId(R.string.ui_state_error)
+            }
+        }
+    }
