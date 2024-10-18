@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
@@ -52,7 +53,7 @@ fun MusicScreen(
     playerUiState: UiState<Player>
 ) {
     LifecycleStartEffect(viewModel) {
-        viewModel.fetchFeaturedPlaylists()
+        viewModel.fetchMusic()
         onStopOrDispose { }
     }
     val uiState by viewModel.uiState.collectAsState()
@@ -81,11 +82,6 @@ private fun MusicUiScaffold(
     }
 }
 
-private data class ColumnConfig(
-    val numColumns: Int,
-    val columnSize: Dp
-)
-
 @Composable
 private fun MusicContent(
     modifier: Modifier = Modifier,
@@ -99,25 +95,20 @@ private fun MusicContent(
     val visibleAlbums = if (screenWidth > screenHeight) 6.5F else 3.5F
     val albumPadding = Dimen.Padding
     val albumSize = (screenWidth - (albumPadding * ceil(visibleAlbums).toInt())) / visibleAlbums
-//    val columnConfig = remember(screenWidth, screenHeight) {
-//        ColumnConfig(
-//            numColumns = numColumns,
-//            columnSize = (screenWidth - (columnPadding * (numColumns + 1))) / numColumns
-//        )
-//    }
-//    val rowData = remember(items, columnConfig.numColumns) {
-//        items.chunked(columnConfig.numColumns)
-//    }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = lazyListState
     ) {
-        items(items) { shelf ->
+        itemsIndexed(items) { index, shelf ->
             Column(
                 modifier = Modifier
                     .padding(
-                        top = Dimen.Padding,
-                        bottom = Dimen.PaddingDouble
+                        top = if (index == 0) Dimen.Padding else 0.dp,
+                        bottom = if (index == items.lastIndex) {
+                            Dimen.PaddingDouble
+                        } else {
+                            Dimen.PaddingOneAndAHalf
+                        }
                     )
             ) {
                 Text(

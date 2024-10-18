@@ -1,5 +1,8 @@
 package com.elisealix22.butterforspotify.data
 
+import com.elisealix22.butterforspotify.data.model.album.NewReleasesResponse
+import com.elisealix22.butterforspotify.data.model.album.SavedAlbumResponse
+import com.elisealix22.butterforspotify.data.model.playlist.RecentlyPlayedResponse
 import com.elisealix22.butterforspotify.data.model.track.TopTracksResponse
 import retrofit2.Call
 import retrofit2.http.GET
@@ -12,4 +15,19 @@ interface SpotifyAPI {
         @Query("time_range") timeRange: String,
         @Query("limit") limit: Int
     ): Call<TopTracksResponse>
+
+    @GET("me/player/recently-played")
+    fun recentlyPlayed(
+        @Query("limit") limit: Int
+    ): Call<RecentlyPlayedResponse>
+
+    @GET("browse/new-releases")
+    fun newReleases(
+        @Query("limit") limit: Int
+    ): Call<NewReleasesResponse>
+
+    @GET("me/albums")
+    fun savedAlbums(
+        @Query("limit") limit: Int
+    ): Call<SavedAlbumResponse>
 }
