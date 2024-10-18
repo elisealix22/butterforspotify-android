@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -94,7 +93,9 @@ private fun MusicContent(
     val screenWidth = configuration.screenWidthDp.dp
     val visibleAlbums = if (screenWidth > screenHeight) 6.5F else 3.5F
     val albumPadding = Dimen.Padding
-    val albumSize = (screenWidth - (albumPadding * ceil(visibleAlbums).toInt())) / visibleAlbums
+    val albumSize = remember(screenWidth) {
+        (screenWidth - (albumPadding * ceil(visibleAlbums).toInt())) / visibleAlbums
+    }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = lazyListState
