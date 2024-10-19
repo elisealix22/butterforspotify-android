@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,7 +37,7 @@ import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
-val PlayerBarHeight = 58.dp
+val PlayerBarHeight = 64.dp
 private val PlayerBarImageSize = 48.dp
 
 @Composable
@@ -45,13 +47,14 @@ fun PlayerBar(
 ) {
     Surface(
         modifier = modifier,
-        shadowElevation = 8.dp
+        shadowElevation = 8.dp,
+        shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(PlayerBarHeight)
-                .padding(horizontal = Dimen.Padding)
+                .padding(horizontal = (PlayerBarHeight - PlayerBarImageSize) / 2)
         ) {
             when (playerUiState) {
                 is UiState.Success -> PlayerContent(playerUiState.data)
