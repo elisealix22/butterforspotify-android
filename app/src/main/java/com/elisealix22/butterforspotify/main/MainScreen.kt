@@ -1,10 +1,20 @@
 package com.elisealix22.butterforspotify.main
 
 import android.util.Log
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitDragOrCancellation
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
+import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,19 +50,24 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -75,6 +90,7 @@ import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
+import kotlin.math.abs
 
 @Composable
 fun MainScreen(
@@ -252,6 +268,10 @@ private fun PortraitUi(
     navController: NavHostController,
     onTabClick: (BottomNavigationTab) -> Unit
 ) {
+    var originalPlayerHeight by remember { mutableStateOf(PlayerBarHeight) }
+    var playerHeight by remember { mutableStateOf(PlayerBarHeight) }
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
     Scaffold(
         bottomBar = {
 //            Column {
@@ -277,10 +297,51 @@ private fun PortraitUi(
                     )
                 }
             }
+
+            // https://developer.android.com/reference/kotlin/androidx/compose/foundation/gestures/package-summary#(androidx.compose.ui.input.pointer.AwaitPointerEventScope).awaitVerticalDragOrCancellation(androidx.compose.ui.input.pointer.PointerId)
             PlayerBar(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = Dimen.Padding),
+                    .padding(horizontal = Dimen.Padding)
+                    .height(playerHeight)
+                    .pointerInput(Unit) {
+//                        detectVerticalDragGestures { change, dragAmount ->
+//                            Log.e("###", "DRAG: $dragAmount")
+//                            val newHeight = max(PlayerBarHeight, playerHeight - dragAmount.toDp())
+//                            change.consume()
+//                            playerHeight = newHeight
+//                        }
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            var change =
+                                awaitVerticalTouchSlopOrCancellation(down.id) { change, _ ->
+                                    originalPlayerHeight = playerHeight
+                                    change.consume()
+                                }
+                            while (change != null && change.pressed) {
+                                change = awaitVerticalDragOrCancellation(change.id)
+                                if (change != null && change.pressed) {
+                                    val newValue = playerHeight - change.positionChange().y.toDp()
+                                    change.consume()
+//                                    Log.e("####", "VERT DRAG VALUE: $newValue")
+                                    playerHeight = max(PlayerBarHeight, newValue)
+                                }
+                            }
+                            Log.e("####", "ORIGINAL: $originalPlayerHeight")
+                            Log.e("####", "PLAYER: $playerHeight")
+                            val isUp = originalPlayerHeight < playerHeight
+                            val isOverThreshold =  abs(originalPlayerHeight.toPx() - playerHeight.toPx()) > (PlayerBarHeight * 2).toPx()
+                            playerHeight = if (isOverThreshold) {
+                                if (isUp) screenHeight else PlayerBarHeight
+                            } else {
+                                if (isUp) PlayerBarHeight else screenHeight
+                            }
+
+                            // TODO(elise): https://developer.android.com/develop/ui/compose/animation/advanced
+
+                            Log.e("####", "Ended?")
+                        }
+                    },
                 playerUiState = playerUiState
             )
         }
