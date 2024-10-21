@@ -118,11 +118,11 @@ private fun LandscapeScaffold(
             navHost()
             PlayerBar(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(
-                        start = playerBarStartPadding,
-                        end = playerBarEndPadding
-                    ),
+                    .align(Alignment.BottomCenter),
+//                    .padding(
+//                        start = playerBarStartPadding,
+//                        end = playerBarEndPadding
+//                    ),
                 playerUiState = playerUiState
             )
         }
@@ -157,8 +157,8 @@ private fun PortraitScaffold(
             navHost()
             PlayerBar(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = Dimen.PaddingOneAndAHalf),
+                    .align(Alignment.BottomCenter),
+//                    .padding(horizontal = Dimen.PaddingOneAndAHalf),
                 playerUiState = playerUiState
             )
         }

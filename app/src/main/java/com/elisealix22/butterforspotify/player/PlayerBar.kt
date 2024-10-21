@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -24,6 +25,8 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,14 +90,24 @@ fun PlayerBar(
 private fun Modifier.expandableHeight(): Modifier {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp
     val playerBarHeight = remember {
         Animatable(PlayerBarHeight.value).apply {
             updateBounds(lowerBound = PlayerBarHeight.value, upperBound = screenHeight.value)
         }
     }
+    val minPlayerBarWidth = remember(screenWidth) { screenWidth.value * 0.8F }
+    val playerBarWidth = remember(playerBarHeight) {
+        derivedStateOf {
+            val expandableHeight = screenHeight.value - PlayerBarHeight.value
+            val expandableWidth = screenWidth.value - minPlayerBarWidth
+            minPlayerBarWidth + (playerBarHeight.value / expandableHeight * expandableWidth)
+        }
+    }
     var isUp = false
     return this
         .height(playerBarHeight.value.dp)
+        .width(playerBarWidth.value.dp)
         .pointerInput(Unit) {
             coroutineScope {
                 awaitEachGesture {
