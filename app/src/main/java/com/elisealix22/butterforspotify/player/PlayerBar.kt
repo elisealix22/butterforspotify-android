@@ -1,5 +1,6 @@
 package com.elisealix22.butterforspotify.player
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.ArcAnimationSpec
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,11 +35,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
+import com.elisealix22.butterforspotify.main.NavigationBarSize
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
@@ -50,6 +55,8 @@ import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.exp
+import kotlin.math.roundToInt
 
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSize = 48.dp
@@ -89,25 +96,41 @@ fun PlayerBar(
 @Composable
 private fun Modifier.expandableHeight(): Modifier {
     val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
-    val screenWidth = configuration.screenWidthDp.dp
+    val containerHeight = configuration.screenHeightDp.dp
+    val containerWidth = configuration.screenWidthDp.dp
+    val isLandscape = containerWidth > containerHeight
     val playerBarHeight = remember {
         Animatable(PlayerBarHeight.value).apply {
-            updateBounds(lowerBound = PlayerBarHeight.value, upperBound = screenHeight.value)
+            updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
         }
     }
-    val minPlayerBarWidth = remember(screenWidth) { screenWidth.value * 0.8F }
+    val minPlayerBarWidth = remember(containerWidth) { containerWidth.value * 0.8F }
     val playerBarWidth = remember(playerBarHeight) {
         derivedStateOf {
-            val expandableHeight = screenHeight.value - PlayerBarHeight.value
-            val expandableWidth = screenWidth.value - minPlayerBarWidth
+            val expandableHeight = containerHeight.value - PlayerBarHeight.value
+            val expandableWidth = containerWidth.value - minPlayerBarWidth
             minPlayerBarWidth + (playerBarHeight.value / expandableHeight * expandableWidth)
         }
     }
-    var isUp = false
+    val startOffsetY = remember(isLandscape) {
+        if (isLandscape) 0F else NavigationBarSize.value
+    }
+    val offsetY = remember(isLandscape, playerBarHeight) {
+        derivedStateOf {
+            val expandableHeight = containerHeight.value - PlayerBarHeight.value
+            val multiplier = (playerBarHeight.value - PlayerBarHeight.value) / expandableHeight
+            val offset =  startOffsetY - (multiplier * startOffsetY)
+            Log.e("###", "offset: $offset")
+            -1 * offset
+        }
+    }
+    var isMovingUp = false
     return this
         .height(playerBarHeight.value.dp)
         .width(playerBarWidth.value.dp)
+        .offset {
+            IntOffset(x = 0, y = offsetY.value.dp.roundToPx())
+        }
         .pointerInput(Unit) {
             coroutineScope {
                 awaitEachGesture {
@@ -119,7 +142,7 @@ private fun Modifier.expandableHeight(): Modifier {
                     while (change != null && change.pressed) {
                         change = awaitVerticalDragOrCancellation(change.id)
                         if (change != null && change.pressed) {
-                            isUp = change.previousPosition.y > change.position.y
+                            isMovingUp = change.previousPosition.y > change.position.y
                             val changeDp = change.positionChange().y.toDp().value
                             val targetValue = playerBarHeight.value - changeDp
                             change.consume()
@@ -128,7 +151,7 @@ private fun Modifier.expandableHeight(): Modifier {
                             }
                         }
                     }
-                    val endHeight = if (isUp) {
+                    val endHeight = if (isMovingUp) {
                         playerBarHeight.upperBound
                     } else {
                         playerBarHeight.lowerBound

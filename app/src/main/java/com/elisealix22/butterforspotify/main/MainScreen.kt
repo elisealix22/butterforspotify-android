@@ -3,7 +3,9 @@ package com.elisealix22.butterforspotify.main
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.NavigationBar
@@ -11,15 +13,19 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -40,7 +46,8 @@ import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.LandscapeThemePreview
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
-private val LandscapeNavigationRailWidth = 80.dp
+// TODO(elise): Private
+val NavigationBarSize = 80.dp
 
 @Composable
 fun MainScreen(
@@ -49,22 +56,6 @@ fun MainScreen(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val navHost: @Composable () -> Unit = {
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavigationTabs.first().route
-        ) {
-            composable<ButterRoute.Music> {
-                MusicScreen(playerUiState = playerUiState)
-            }
-            composable<ButterRoute.Audio> {
-                Text(
-                    modifier = Modifier.padding(Dimen.Padding),
-                    text = "Episodes coming soon."
-                )
-            }
-        }
-    }
     val onTabClick: (BottomNavigationTab) -> Unit = { tab ->
         navController.navigate(tab.route) {
             popUpTo(navController.graph.findStartDestination().id) {
@@ -80,14 +71,14 @@ fun MainScreen(
     if (screenWidth > screenHeight) {
         LandscapeScaffold(
             playerUiState = playerUiState,
-            navHost = navHost,
+            navHostController = navController,
             currentDestination = currentDestination,
             onTabClick = onTabClick
         )
     } else {
         PortraitScaffold(
             playerUiState = playerUiState,
-            navHost = navHost,
+            navHostController = navController,
             currentDestination = currentDestination,
             onTabClick = onTabClick
         )
@@ -98,13 +89,16 @@ fun MainScreen(
 private fun LandscapeScaffold(
     playerUiState: UiState<Player>,
     currentDestination: NavDestination?,
-    navHost: @Composable () -> Unit,
+    navHostController: NavHostController,
     onTabClick: (BottomNavigationTab) -> Unit
 ) {
-    val playerBarStartPadding = Dimen.Padding
-    val playerBarEndPadding = LandscapeNavigationRailWidth + playerBarStartPadding
-    Row(modifier = Modifier.fillMaxWidth()) {
-        NavigationRail(modifier = Modifier.width(LandscapeNavigationRailWidth)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        NavigationRail(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(NavigationBarSize)
+                .align(Alignment.TopStart)
+        ) {
             BottomNavigationTabs.forEach { tab ->
                 NavigationRailItem(
                     icon = { BottomNavigationIcon(tab = tab) },
@@ -114,18 +108,15 @@ private fun LandscapeScaffold(
                 )
             }
         }
-        Box(modifier = Modifier.fillMaxHeight()) {
-            navHost()
-            PlayerBar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter),
-//                    .padding(
-//                        start = playerBarStartPadding,
-//                        end = playerBarEndPadding
-//                    ),
-                playerUiState = playerUiState
-            )
-        }
+        MainNavHost(
+            modifier = Modifier.padding(start = NavigationBarSize),
+            navHostController = navHostController,
+            playerUiState = playerUiState
+        )
+        PlayerBar(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            playerUiState = playerUiState
+        )
     }
 }
 
@@ -133,33 +124,57 @@ private fun LandscapeScaffold(
 private fun PortraitScaffold(
     playerUiState: UiState<Player>,
     currentDestination: NavDestination?,
-    navHost: @Composable () -> Unit,
+    navHostController: NavHostController,
     onTabClick: (BottomNavigationTab) -> Unit
 ) {
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                BottomNavigationTabs.forEach { tab ->
-                    NavigationBarItem(
-                        icon = { BottomNavigationIcon(tab = tab) },
-                        label = { BottomNavigationText(tab = tab) },
-                        selected = tab.isSelected(currentDestination),
-                        onClick = { onTabClick(tab) }
-                    )
-                }
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        MainNavHost(
+            modifier = Modifier.padding(bottom = NavigationBarSize),
+            navHostController = navHostController,
+            playerUiState = playerUiState
+        )
+        NavigationBar(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(NavigationBarSize)
+                .align(Alignment.BottomStart)
+        ) {
+            BottomNavigationTabs.forEach { tab ->
+                NavigationBarItem(
+                    icon = { BottomNavigationIcon(tab = tab) },
+                    label = { BottomNavigationText(tab = tab) },
+                    selected = tab.isSelected(currentDestination),
+                    onClick = { onTabClick(tab) }
+                )
             }
         }
-    ) { innerPadding ->
-        Box(modifier = Modifier
-            .padding(innerPadding)
-            .fillMaxHeight()
-        ) {
-            navHost()
-            PlayerBar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter),
-//                    .padding(horizontal = Dimen.PaddingOneAndAHalf),
-                playerUiState = playerUiState
+        PlayerBar(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            playerUiState = playerUiState
+        )
+    }
+}
+
+@Composable
+private fun MainNavHost(
+    modifier: Modifier,
+    navHostController: NavHostController,
+    playerUiState: UiState<Player>
+) {
+    NavHost(
+        modifier = modifier,
+        navController = navHostController,
+        startDestination = BottomNavigationTabs.first().route
+    ) {
+        composable<ButterRoute.Music> {
+            MusicScreen(playerUiState = playerUiState)
+        }
+        composable<ButterRoute.Audio> {
+            Text(
+                modifier = Modifier.padding(Dimen.Padding),
+                text = "Episodes coming soon."
             )
         }
     }
