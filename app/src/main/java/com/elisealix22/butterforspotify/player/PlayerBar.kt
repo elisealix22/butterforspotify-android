@@ -1,5 +1,13 @@
 package com.elisealix22.butterforspotify.player
 
+import android.util.Log
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.ArcAnimationSpec
+import androidx.compose.animation.core.ExperimentalAnimationSpecApi
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
+import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,11 +27,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
@@ -36,9 +45,13 @@ import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
 import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSize = 48.dp
+@OptIn(ExperimentalAnimationSpecApi::class)
+private val ArcAnimationSpec: ArcAnimationSpec<Float> = ArcAnimationSpec()
 
 @Composable
 fun PlayerBar(
@@ -46,7 +59,7 @@ fun PlayerBar(
     playerUiState: UiState<Player>
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.expandableHeight(),
         shadowElevation = 8.dp,
         shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
     ) {
@@ -67,6 +80,55 @@ fun PlayerBar(
             }
         }
     }
+}
+
+@OptIn(ExperimentalAnimationSpecApi::class)
+@Composable
+private fun Modifier.expandableHeight(): Modifier {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val playerBarHeight = remember {
+        Animatable(PlayerBarHeight.value).apply {
+            updateBounds(lowerBound = PlayerBarHeight.value, upperBound = screenHeight.value)
+        }
+    }
+    var isUp = false
+    return this
+        .height(playerBarHeight.value.dp)
+        .pointerInput(Unit) {
+            coroutineScope {
+                awaitEachGesture {
+                    val down = awaitFirstDown()
+                    var change =
+                        awaitVerticalTouchSlopOrCancellation(down.id) { change, _ ->
+                            change.consume()
+                        }
+                    while (change != null && change.pressed) {
+                        change = awaitVerticalDragOrCancellation(change.id)
+                        if (change != null && change.pressed) {
+                            isUp = change.previousPosition.y > change.position.y
+                            val changeDp = change.positionChange().y.toDp().value
+                            val targetValue = playerBarHeight.value - changeDp
+                            change.consume()
+                            launch {
+                                playerBarHeight.snapTo(targetValue)
+                            }
+                        }
+                    }
+                    val endHeight = if (isUp) {
+                        playerBarHeight.upperBound
+                    } else {
+                        playerBarHeight.lowerBound
+                    } ?: error("Player bar bounds not set.")
+                    launch {
+                        playerBarHeight.animateTo(
+                            targetValue = endHeight,
+                            animationSpec = ArcAnimationSpec
+                        )
+                    }
+                }
+            }
+        }
 }
 
 @Composable
