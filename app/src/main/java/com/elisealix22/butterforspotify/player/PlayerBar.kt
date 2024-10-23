@@ -1,7 +1,5 @@
 package com.elisealix22.butterforspotify.player
 
-import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.ArcAnimationSpec
 import androidx.compose.animation.core.ExperimentalAnimationSpecApi
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -28,14 +25,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,23 +53,36 @@ import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.exp
 import kotlin.math.roundToInt
 
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSize = 48.dp
+private val PlayerBarRoundedCorner = 4.dp
 @OptIn(ExperimentalAnimationSpecApi::class)
 private val ArcAnimationSpec: ArcAnimationSpec<Float> = ArcAnimationSpec()
 
 @Composable
 fun PlayerBar(
     modifier: Modifier = Modifier,
-    playerUiState: UiState<Player>
+    playerUiState: UiState<Player>,
+    onExpanded: (Float) -> Unit = { }
 ) {
+    val expandedOffset = remember { mutableFloatStateOf(0F) }
+    val roundedCornerShape by remember {
+        derivedStateOf {
+            val corner = (1F - expandedOffset.floatValue) * PlayerBarRoundedCorner.value
+            RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp)
+        }
+    }
     Surface(
-        modifier = modifier.expandableHeight(),
-        shadowElevation = 8.dp,
-        shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+        modifier = modifier.expandableHeight(
+            onExpanded = { offset ->
+                expandedOffset.floatValue = offset
+                onExpanded(offset)
+            }
+        ),
+        shadowElevation = if (expandedOffset.floatValue == 1F) 0.dp else 8.dp,
+        shape = roundedCornerShape
     ) {
         Row(
             modifier = Modifier
@@ -94,42 +105,43 @@ fun PlayerBar(
 
 @OptIn(ExperimentalAnimationSpecApi::class)
 @Composable
-private fun Modifier.expandableHeight(): Modifier {
+private fun Modifier.expandableHeight(onExpanded: (offset: Float) -> Unit): Modifier {
+    // TODO(elise): Pass the containerHeight and offset in?
     val configuration = LocalConfiguration.current
     val containerHeight = configuration.screenHeightDp.dp
     val containerWidth = configuration.screenWidthDp.dp
     val isLandscape = containerWidth > containerHeight
+    val startOffsetY = if (isLandscape) 0F else NavigationBarSize.value
     val playerBarHeight = remember {
         Animatable(PlayerBarHeight.value).apply {
             updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
         }
     }
-    val minPlayerBarWidth = remember(containerWidth) { containerWidth.value * 0.8F }
-    val playerBarWidth = remember(playerBarHeight) {
+    // Value between 0F and 1F where 0F is collapsed and 1F is expanded.
+    val expandedOffset by remember {
         derivedStateOf {
-            val expandableHeight = containerHeight.value - PlayerBarHeight.value
-            val expandableWidth = containerWidth.value - minPlayerBarWidth
-            minPlayerBarWidth + (playerBarHeight.value / expandableHeight * expandableWidth)
+            val availableHeight = containerHeight.value - PlayerBarHeight.value
+            val traveledHeight = playerBarHeight.value - PlayerBarHeight.value
+            traveledHeight.roundToInt() / availableHeight
         }
     }
-    val startOffsetY = remember(isLandscape) {
-        if (isLandscape) 0F else NavigationBarSize.value
-    }
-    val offsetY = remember(isLandscape, playerBarHeight) {
+    // TODO(elise): Play with width value as a fraction of padding
+    val minPlayerBarWidth = remember(containerWidth) { containerWidth.value * 0.9F }
+    val playerBarWidth = remember {
         derivedStateOf {
-            val expandableHeight = containerHeight.value - PlayerBarHeight.value
-            val multiplier = (playerBarHeight.value - PlayerBarHeight.value) / expandableHeight
-            val offset =  startOffsetY - (multiplier * startOffsetY)
-            Log.e("###", "offset: $offset")
-            -1 * offset
+            val expandableWidth = containerWidth.value - minPlayerBarWidth
+            minPlayerBarWidth + (expandedOffset * expandableWidth)
         }
     }
     var isMovingUp = false
     return this
-        .height(playerBarHeight.value.dp)
-        .width(playerBarWidth.value.dp)
+        .size(width = playerBarWidth.value.dp, height = playerBarHeight.value.dp)
+        .onSizeChanged { onExpanded(expandedOffset) }
         .offset {
-            IntOffset(x = 0, y = offsetY.value.dp.roundToPx())
+            IntOffset(
+                x = 0,
+                y = (-1F * (startOffsetY - (expandedOffset * startOffsetY))).dp.roundToPx()
+            )
         }
         .pointerInput(Unit) {
             coroutineScope {
