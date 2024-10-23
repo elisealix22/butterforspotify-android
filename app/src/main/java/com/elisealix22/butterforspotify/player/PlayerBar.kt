@@ -65,6 +65,7 @@ fun PlayerBar(
     playerUiState: UiState<Player>,
     containerWidth: Dp = LocalConfiguration.current.screenWidthDp.dp,
     containerHeight: Dp = LocalConfiguration.current.screenHeightDp.dp,
+    horizontalPadding: Dp = Dimen.PaddingOneAndAHalf,
     onExpanded: (Float) -> Unit = {}
 ) {
     val expandedOffset = remember { mutableFloatStateOf(0F) }
@@ -81,6 +82,7 @@ fun PlayerBar(
         modifier = modifier.expandableHeight(
             containerWidth = containerWidth,
             containerHeight = containerHeight,
+            horizontalPadding = horizontalPadding,
             onExpanded = { offset ->
                 expandedOffset.floatValue = offset
                 onExpanded(offset)
@@ -113,6 +115,7 @@ fun PlayerBar(
 private fun Modifier.expandableHeight(
     containerWidth: Dp,
     containerHeight: Dp,
+    horizontalPadding: Dp,
     onExpanded: (offset: Float) -> Unit
 ): Modifier {
     val playerBarHeight = remember {
@@ -128,8 +131,7 @@ private fun Modifier.expandableHeight(
             traveledHeight.roundToInt() / availableHeight
         }
     }
-    // TODO(elise): Play with width value as a fraction of padding
-    val minPlayerBarWidth = remember(containerWidth) { containerWidth.value * 0.9F }
+    val minPlayerBarWidth = containerWidth.value - horizontalPadding.times(2).value
     val playerBarWidth = remember {
         derivedStateOf {
             val expandableWidth = containerWidth.value - minPlayerBarWidth

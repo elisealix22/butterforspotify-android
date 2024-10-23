@@ -79,13 +79,7 @@ fun AdaptivePlayerBarScaffold(
             navigationSuite = {
                 NavigationSuite(
                     modifier = Modifier
-                        .apply {
-                            if (isLandscape) {
-                                width(NavigationBarSize)
-                            } else {
-                                height(NavigationBarSize)
-                            }
-                        }
+                        .fixNavigationSize(isLandscape)
                         .offset {
                             IntOffset(
                                 x = offset.value.x.dp.roundToPx(),
@@ -128,12 +122,25 @@ fun AdaptivePlayerBarScaffold(
                     playerUiState = playerUiState,
                     containerHeight = containerHeight,
                     containerWidth = containerWidth,
+                    horizontalPadding = if (isLandscape) {
+                        NavigationBarSize.plus(Dimen.PaddingOneAndAHalf)
+                    } else {
+                        Dimen.PaddingOneAndAHalf
+                    },
                     onExpanded = { offset ->
                         playerBarExpandedOffset.floatValue = offset
                     }
                 )
             }
         )
+    }
+}
+
+private fun Modifier.fixNavigationSize(isLandscape: Boolean): Modifier {
+    return if (isLandscape) {
+        width(NavigationBarSize)
+    } else {
+        height(NavigationBarSize)
     }
 }
 
