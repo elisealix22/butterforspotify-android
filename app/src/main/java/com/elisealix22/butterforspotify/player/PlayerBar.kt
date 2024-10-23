@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,10 +36,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
-import com.elisealix22.butterforspotify.main.NavigationBarSize
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
@@ -65,24 +63,31 @@ private val ArcAnimationSpec: ArcAnimationSpec<Float> = ArcAnimationSpec()
 fun PlayerBar(
     modifier: Modifier = Modifier,
     playerUiState: UiState<Player>,
-    onExpanded: (Float) -> Unit = { }
+    containerWidth: Dp = LocalConfiguration.current.screenWidthDp.dp,
+    containerHeight: Dp = LocalConfiguration.current.screenHeightDp.dp,
+    onExpanded: (Float) -> Unit = {}
 ) {
     val expandedOffset = remember { mutableFloatStateOf(0F) }
-    val roundedCornerShape by remember {
+    val adjustableMeasurements by remember {
         derivedStateOf {
             val corner = (1F - expandedOffset.floatValue) * PlayerBarRoundedCorner.value
-            RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp)
+            Pair(
+                RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp),
+                if (expandedOffset.floatValue == 1F) 0.dp else 8.dp
+            )
         }
     }
     Surface(
         modifier = modifier.expandableHeight(
+            containerWidth = containerWidth,
+            containerHeight = containerHeight,
             onExpanded = { offset ->
                 expandedOffset.floatValue = offset
                 onExpanded(offset)
             }
         ),
-        shadowElevation = if (expandedOffset.floatValue == 1F) 0.dp else 8.dp,
-        shape = roundedCornerShape
+        shape = adjustableMeasurements.first,
+        shadowElevation = adjustableMeasurements.second
     ) {
         Row(
             modifier = Modifier
@@ -105,13 +110,11 @@ fun PlayerBar(
 
 @OptIn(ExperimentalAnimationSpecApi::class)
 @Composable
-private fun Modifier.expandableHeight(onExpanded: (offset: Float) -> Unit): Modifier {
-    // TODO(elise): Pass the containerHeight and offset in?
-    val configuration = LocalConfiguration.current
-    val containerHeight = configuration.screenHeightDp.dp
-    val containerWidth = configuration.screenWidthDp.dp
-    val isLandscape = containerWidth > containerHeight
-    val startOffsetY = if (isLandscape) 0F else NavigationBarSize.value
+private fun Modifier.expandableHeight(
+    containerWidth: Dp,
+    containerHeight: Dp,
+    onExpanded: (offset: Float) -> Unit
+): Modifier {
     val playerBarHeight = remember {
         Animatable(PlayerBarHeight.value).apply {
             updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
@@ -137,12 +140,6 @@ private fun Modifier.expandableHeight(onExpanded: (offset: Float) -> Unit): Modi
     return this
         .size(width = playerBarWidth.value.dp, height = playerBarHeight.value.dp)
         .onSizeChanged { onExpanded(expandedOffset) }
-        .offset {
-            IntOffset(
-                x = 0,
-                y = (-1F * (startOffsetY - (expandedOffset * startOffsetY))).dp.roundToPx()
-            )
-        }
         .pointerInput(Unit) {
             coroutineScope {
                 awaitEachGesture {
