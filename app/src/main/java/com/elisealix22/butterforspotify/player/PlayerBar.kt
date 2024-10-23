@@ -49,13 +49,14 @@ import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
 import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
+import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSize = 48.dp
 private val PlayerBarRoundedCorner = 4.dp
+
 @OptIn(ExperimentalAnimationSpecApi::class)
 private val ArcAnimationSpec: ArcAnimationSpec<Float> = ArcAnimationSpec()
 
