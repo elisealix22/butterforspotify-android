@@ -1,12 +1,5 @@
 package com.elisealix22.butterforspotify.player
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.ArcAnimationSpec
-import androidx.compose.animation.core.ExperimentalAnimationSpecApi
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
-import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,9 +22,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,16 +39,15 @@ import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
 import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
-import kotlin.math.roundToInt
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSize = 48.dp
 private val PlayerBarRoundedCorner = 4.dp
 
-@OptIn(ExperimentalAnimationSpecApi::class)
-private val ArcAnimationSpec: ArcAnimationSpec<Float> = ArcAnimationSpec()
+private data class SurfaceConfig(
+    val roundedCornerShape: RoundedCornerShape,
+    val shadowElevation: Dp
+)
 
 @Composable
 fun PlayerBar(
@@ -67,30 +56,29 @@ fun PlayerBar(
     containerWidth: Dp = LocalConfiguration.current.screenWidthDp.dp,
     containerHeight: Dp = LocalConfiguration.current.screenHeightDp.dp,
     horizontalPadding: Dp = Dimen.PaddingOneAndAHalf,
-    onExpanded: (Float) -> Unit = {}
+    onExpandChange: (offset: Float) -> Unit = {}
 ) {
     val expandedOffset = remember { mutableFloatStateOf(0F) }
-    val adjustableMeasurements by remember {
+    val surfaceConfig by remember {
         derivedStateOf {
             val corner = (1F - expandedOffset.floatValue) * PlayerBarRoundedCorner.value
-            Pair(
-                RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp),
-                if (expandedOffset.floatValue == 1F) 0.dp else 8.dp
+            SurfaceConfig(
+                roundedCornerShape = RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp),
+                shadowElevation = if (expandedOffset.floatValue == 1F) 0.dp else 8.dp
             )
         }
     }
     Surface(
-        modifier = modifier.expandableHeight(
+        modifier = modifier.expandablePlayerBar(
             containerWidth = containerWidth,
             containerHeight = containerHeight,
-            horizontalPadding = horizontalPadding,
-            onExpanded = { offset ->
-                expandedOffset.floatValue = offset
-                onExpanded(offset)
-            }
-        ),
-        shape = adjustableMeasurements.first,
-        shadowElevation = adjustableMeasurements.second
+            horizontalPadding = horizontalPadding
+        ) { offset ->
+            expandedOffset.floatValue = offset
+            onExpandChange(offset)
+        },
+        shape = surfaceConfig.roundedCornerShape,
+        shadowElevation = surfaceConfig.shadowElevation
     ) {
         Row(
             modifier = Modifier
@@ -109,74 +97,6 @@ fun PlayerBar(
             }
         }
     }
-}
-
-@OptIn(ExperimentalAnimationSpecApi::class)
-@Composable
-private fun Modifier.expandableHeight(
-    containerWidth: Dp,
-    containerHeight: Dp,
-    horizontalPadding: Dp,
-    onExpanded: (offset: Float) -> Unit
-): Modifier {
-    val playerBarHeight = remember {
-        Animatable(PlayerBarHeight.value).apply {
-            updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
-        }
-    }
-    // Value between 0F and 1F where 0F is collapsed and 1F is expanded.
-    val expandedOffset by remember {
-        derivedStateOf {
-            val availableHeight = containerHeight.value - PlayerBarHeight.value
-            val traveledHeight = playerBarHeight.value - PlayerBarHeight.value
-            traveledHeight.roundToInt() / availableHeight
-        }
-    }
-    val minPlayerBarWidth = containerWidth.value - horizontalPadding.times(2).value
-    val playerBarWidth = remember {
-        derivedStateOf {
-            val expandableWidth = containerWidth.value - minPlayerBarWidth
-            minPlayerBarWidth + (expandedOffset * expandableWidth)
-        }
-    }
-    var isMovingUp = false
-    return this
-        .size(width = playerBarWidth.value.dp, height = playerBarHeight.value.dp)
-        .onSizeChanged { onExpanded(expandedOffset) }
-        .pointerInput(Unit) {
-            coroutineScope {
-                awaitEachGesture {
-                    val down = awaitFirstDown()
-                    var change =
-                        awaitVerticalTouchSlopOrCancellation(down.id) { change, _ ->
-                            change.consume()
-                        }
-                    while (change != null && change.pressed) {
-                        change = awaitVerticalDragOrCancellation(change.id)
-                        if (change != null && change.pressed) {
-                            isMovingUp = change.previousPosition.y > change.position.y
-                            val changeDp = change.positionChange().y.toDp().value
-                            val targetValue = playerBarHeight.value - changeDp
-                            change.consume()
-                            launch {
-                                playerBarHeight.snapTo(targetValue)
-                            }
-                        }
-                    }
-                    val endHeight = if (isMovingUp) {
-                        playerBarHeight.upperBound
-                    } else {
-                        playerBarHeight.lowerBound
-                    } ?: error("Player bar bounds not set.")
-                    launch {
-                        playerBarHeight.animateTo(
-                            targetValue = endHeight,
-                            animationSpec = ArcAnimationSpec
-                        )
-                    }
-                }
-            }
-        }
 }
 
 @Composable
