@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
+import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 private val MaximumVelocity = Velocity(1F, 100F)
 private val AnimationSpec = SpringSpec<Float>(
@@ -116,7 +116,7 @@ fun Modifier.expandablePlayerBar(
                         playerBarHeight.lowerBound
                     } ?: error("Player bar bounds not set.")
                     val velocity = velocityTracker.calculateVelocity(MaximumVelocity).y
-                        if (endHeight != playerBarHeight.value) {
+                    if (endHeight != playerBarHeight.value) {
                         launch {
                             playerBarHeight.animateTo(
                                 targetValue = endHeight,
