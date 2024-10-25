@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
@@ -60,19 +61,18 @@ fun AdaptivePlayerBarScaffold(
     val playerBarExpandedOffset = remember { mutableFloatStateOf(0F) }
     val selectedItemColors = selectedItemColors()
     val unselectedItemColors = unselectedItemColors()
+    val verticalOffset = if (isLandscape) 0 else {
+        with(LocalDensity.current) {
+            (playerBarExpandedOffset.floatValue * NavigationBarSize.value).dp.roundToPx()
+        }
+    }
     Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
         AdaptivePlayerBarLayout(
             navigationSuite = {
                 NavigationSuite(
                     modifier = Modifier
                         .fixNavigationSize(isLandscape)
-                        .offset {
-                            IntOffset(
-                                x = 0,
-                                y = (playerBarExpandedOffset.floatValue * NavigationBarSize.value)
-                                    .dp.roundToPx()
-                            )
-                        },
+                        .offset { IntOffset(0, verticalOffset) },
                     layoutType = layoutType,
                     colors = navigationSuiteColors,
                     content = {
@@ -100,13 +100,7 @@ fun AdaptivePlayerBarScaffold(
                 PlayerBar(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .offset {
-                            IntOffset(
-                                x = 0,
-                                y = (playerBarExpandedOffset.floatValue * NavigationBarSize.value)
-                                    .dp.roundToPx()
-                            )
-                        },
+                        .offset { IntOffset(0, verticalOffset) },
                     playerUiState = playerUiState,
                     containerHeight = containerHeight,
                     containerWidth = containerWidth,
