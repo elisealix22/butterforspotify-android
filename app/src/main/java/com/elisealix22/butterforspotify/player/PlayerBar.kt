@@ -21,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.asFloatState
 import androidx.compose.runtime.derivedStateOf
@@ -34,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -43,7 +46,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.fastRoundToInt
+import coil3.size.Dimension
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiMessage
@@ -58,6 +63,7 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 import com.spotify.protocol.types.Image
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.exp
 import kotlin.math.roundToInt
 
 val PlayerBarHeight = 64.dp
@@ -115,6 +121,7 @@ fun PlayerBar(
                 modifier = Modifier.align(Alignment.BottomStart),
                 playerUiState = playerUiState,
                 containerWidth = containerWidth,
+                containerHeight = containerHeight,
                 expandedImageTopPadding = expandedImageTopPadding,
                 expandedOffset = expandedOffset.floatValue
             )
@@ -128,133 +135,128 @@ private fun CollapsedPlayerBar(
     modifier: Modifier = Modifier,
     playerUiState: UiState<Player>,
     containerWidth: Dp,
+    containerHeight: Dp,
     expandedImageTopPadding: Dp,
     expandedOffset: Float
 ) {
-//    val scope = rememberCoroutineScope()
-    val alpha = 1F - (expandedOffset / .10F).coerceIn(0F, 1F)
-    val imageAnimationOffset = ((expandedOffset - .05F) / .95F).coerceIn(0F, 1F)
-    val imageSizeDiff = PlayerBarImageSizeExpanded - PlayerBarImageSizeCollapsed
-//    val imageScale = ((imageSizeDiff * expandedOffset) + PlayerBarImageSizeCollapsed) /
-//            PlayerBarImageSizeCollapsed
-    val imageScale = ((imageSizeDiff * imageAnimationOffset) + PlayerBarImageSizeCollapsed) /
-            PlayerBarImageSizeCollapsed
-    val padding = (PlayerBarHeight - PlayerBarImageSizeCollapsed) / 2
-    val collapsedSize = with(LocalDensity.current) {
-        PlayerBarImageSizeCollapsed.roundToPx() * imageScale
-    }
-    // TODO(elise): Should this animate?
-//    val imageSize = remember { Animatable(0F) }
-//    val imageOffset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
-//    val imageSize = PlayerBarImageSizeCollapsed * imageScale
-    val imageSize = PlayerBarImageSizeCollapsed.plus(
-        PlayerBarImageSizeExpanded
-            .minus(PlayerBarImageSizeCollapsed)
-            .times(imageAnimationOffset)
-    )
+    Box(modifier = modifier) {
+        val scope = rememberCoroutineScope()
 
-    if (playerUiState is UiState.Success) {
-        val player = playerUiState.data
-        AsyncAlbumImage(
-            modifier = Modifier
-                .padding(padding)
-//                .onPlaced {
-//                    val endX = containerWidth.div(2)
-//                        .minus(PlayerBarImageSizeExpanded.div(2))
-//                        .minus(padding)
-//                    val endY = expandedImageTopPadding.minus(padding)
-//                    val imageSizeValue = PlayerBarImageSizeCollapsed.value.plus(
-//                        PlayerBarImageSizeExpanded
-//                            .minus(PlayerBarImageSizeCollapsed)
-//                            .times(imageAnimationOffset).value
-//                    )
-//                    scope.launch {
-//                        imageSize.snapTo(imageSizeValue)
-//                        imageOffset.snapTo(
-//                            Offset(
-//                                x = endX.value * imageAnimationOffset,
-//                                y = endY.value * expandedOffset
-//                            )
-//                        )
-//                    }
-//                }
-                .offset {
-//                    IntOffset(
-//                        x = imageOffset.value.x.dp.roundToPx(),
-//                        y = imageOffset.value.y.dp.roundToPx()
-//                    )
-                    val endX = containerWidth.div(2)
-                        .minus(PlayerBarImageSizeExpanded.div(2))
-                        .minus(padding)
-                        .roundToPx()
-                    val endY = expandedImageTopPadding.minus(padding).roundToPx()
-                    IntOffset(
-                        x = (endX * imageAnimationOffset).fastRoundToInt(),
-                        y = (endY * expandedOffset).fastRoundToInt()
-                    )
-                }
-                .size(imageSize),
-            imageUri = player.playerState.track.imageUri,
-            imagesApi = player.spotifyApis?.imagesApi,
-            imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
-            size = PlayerBarImageSizeCollapsed,
-            contentDescription = stringResource(
-                R.string.album_art_content_description,
-                player.playerState.track.name
-            )
+        val fadeOffset = (expandedOffset / .10F).coerceIn(0F, 1F)
+        val alpha = 1F - fadeOffset
+        val imageHorizontalOffset = ((expandedOffset - .05F) / .25F).coerceIn(0F, 1F)
+        val imageVerticalOffset = ((expandedOffset - .3F) / .7F).coerceIn(0F, 1F)
+//        val imageAnimationOffset = ((expandedOffset - .05F) / .95F).coerceIn(0F, 1F)
+        val imageSizeDiff = PlayerBarImageSizeExpanded - PlayerBarImageSizeCollapsed
+    //    val imageScale = ((imageSizeDiff * expandedOffset) + PlayerBarImageSizeCollapsed) /
+    //            PlayerBarImageSizeCollapsed
+        val imageScale = ((imageSizeDiff * imageHorizontalOffset) + PlayerBarImageSizeCollapsed) /
+                PlayerBarImageSizeCollapsed
+        val padding = (PlayerBarHeight - PlayerBarImageSizeCollapsed) / 2
+        val collapsedSize = with(LocalDensity.current) {
+            PlayerBarImageSizeCollapsed.roundToPx() * imageScale
+        }
+        // TODO(elise): Should this animate?
+//        val imageSize = remember { Animatable(0F) }
+        val imageOffset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
+    //    val imageSize = PlayerBarImageSizeCollapsed * imageScale
+        val imageSize = PlayerBarImageSizeCollapsed.plus(
+            PlayerBarImageSizeExpanded
+                .minus(PlayerBarImageSizeCollapsed)
+                .times(imageHorizontalOffset)
         )
-    }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(PlayerBarHeight)
-            .alpha(alpha)
-            .padding(start = PlayerBarImageSizeCollapsed + padding) // padding
-    ) {
-        when (playerUiState) {
-            is UiState.Success -> {
-                val player = playerUiState.data
-//                    AsyncAlbumImage(
-//                        imageUri = player.playerState.track.imageUri,
-//                        imagesApi = player.spotifyApis?.imagesApi,
-//                        imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
-//                        size = PlayerBarImageSizeCollapsed,
-//                        contentDescription = stringResource(
-//                            R.string.album_art_content_description,
-//                            player.playerState.track.name
-//                        )
-//                    )
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .weight(1F)
-                        .padding(start = Dimen.PaddingHalf)
-                ) {
-                    Text(
-                        text = player.playerState.track.name,
-                        style = TextStyleAlbumTitle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    val artistNames = remember(player.playerState.track.artists) {
-                        player.playerState.track.artists.joinToString { it.name }
-                    }
-                    Text(
-                        text = artistNames,
-                        style = TextStyleArtistTitle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                if (alpha > 0F) {
-                    PlayButton(modifier = Modifier.alpha(alpha), player = player)
-                }
-            }
+        val expandedPx = with(LocalDensity.current) {
+            PlayerBarImageSizeExpanded.roundToPx()
+        }
+        val containerWidthPx = with(LocalDensity.current) {
+            containerWidth.roundToPx()
+        }
+        val paddingPx = with(LocalDensity.current) {
+            padding.roundToPx()
+        }
 
-            is UiState.Error -> Error(playerUiState.message, playerUiState.onTryAgain)
-            is UiState.Loading, is UiState.Initial -> {
-                playerUiState.data.let {
-                    if (it == null) Connecting() else PlayerContent(player = it)
+        val parentHorizontalPadding = Dimen.PaddingOneAndAHalf
+        if (playerUiState is UiState.Success) {
+            val player = playerUiState.data
+            AsyncAlbumImage(
+                modifier = Modifier
+                    .padding(padding)
+                    .size(imageSize)
+                    .offset {
+                        val endX = containerWidth.div(2)
+                            .minus(PlayerBarImageSizeExpanded.div(2))
+                            .minus(padding)
+                            .minus((1 - expandedOffset).times(parentHorizontalPadding))
+                        val endY = containerHeight.times(-1)
+                            .plus(expandedImageTopPadding)
+                            .plus(PlayerBarImageSizeExpanded)
+                            .plus(padding)
+                        IntOffset(
+                            x = (endX * imageHorizontalOffset).roundToPx(),
+                            y = (endY * imageVerticalOffset).roundToPx()
+                        )
+                    },
+                imageUri = player.playerState.track.imageUri,
+                imagesApi = player.spotifyApis?.imagesApi,
+                imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
+                size = PlayerBarImageSizeCollapsed,
+                contentDescription = stringResource(
+                    R.string.album_art_content_description,
+                    player.playerState.track.name
+                )
+            )
+        }
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(PlayerBarHeight)
+                .alpha(alpha)
+                .padding(start = PlayerBarImageSizeCollapsed + padding) // padding
+        ) {
+            when (playerUiState) {
+                is UiState.Success -> {
+                    val player = playerUiState.data
+    //                    AsyncAlbumImage(
+    //                        imageUri = player.playerState.track.imageUri,
+    //                        imagesApi = player.spotifyApis?.imagesApi,
+    //                        imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
+    //                        size = PlayerBarImageSizeCollapsed,
+    //                        contentDescription = stringResource(
+    //                            R.string.album_art_content_description,
+    //                            player.playerState.track.name
+    //                        )
+    //                    )
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterVertically)
+                            .weight(1F)
+                            .padding(start = Dimen.PaddingHalf)
+                    ) {
+                        Text(
+                            text = player.playerState.track.name,
+                            style = TextStyleAlbumTitle,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val artistNames = remember(player.playerState.track.artists) {
+                            player.playerState.track.artists.joinToString { it.name }
+                        }
+                        Text(
+                            text = artistNames,
+                            style = TextStyleArtistTitle,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (alpha > 0F) {
+                        PlayButton(modifier = Modifier.alpha(alpha), player = player)
+                    }
+                }
+                is UiState.Error -> Error(playerUiState.message, playerUiState.onTryAgain)
+                is UiState.Loading, is UiState.Initial -> {
+                    playerUiState.data.let {
+                        if (it == null) Connecting() else PlayerContent(player = it)
+                    }
                 }
             }
         }
