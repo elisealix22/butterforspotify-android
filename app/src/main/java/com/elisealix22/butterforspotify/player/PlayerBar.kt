@@ -2,7 +2,9 @@ package com.elisealix22.butterforspotify.player
 
 import android.util.Log
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -55,6 +58,7 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 import com.spotify.protocol.types.Image
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSizeCollapsed = 48.dp
@@ -102,31 +106,32 @@ fun PlayerBar(
     ) {
         Box {
             ExpandedPlayerBar(
-                modifier = Modifier.align(Alignment.Center),
+                modifier = Modifier.align(Alignment.TopCenter),
+                playerUiState = playerUiState,
                 expandedOffset = expandedOffset.floatValue,
                 expandedImageTopPadding = expandedImageTopPadding,
-                playerUiState = playerUiState
             )
             CollapsedPlayerBar(
                 modifier = Modifier.align(Alignment.BottomStart),
+                playerUiState = playerUiState,
                 containerWidth = containerWidth,
                 expandedImageTopPadding = expandedImageTopPadding,
-                expandedOffset = expandedOffset.floatValue,
-                playerUiState = playerUiState
+                expandedOffset = expandedOffset.floatValue
             )
         }
     }
 }
 
+// TODO(elise): Modifier not used.
 @Composable
 private fun CollapsedPlayerBar(
     modifier: Modifier = Modifier,
+    playerUiState: UiState<Player>,
     containerWidth: Dp,
     expandedImageTopPadding: Dp,
-    expandedOffset: Float,
-    playerUiState: UiState<Player>
+    expandedOffset: Float
 ) {
-    val scope = rememberCoroutineScope()
+//    val scope = rememberCoroutineScope()
     val alpha = 1F - (expandedOffset / .10F).coerceIn(0F, 1F)
     val imageAnimationOffset = ((expandedOffset - .05F) / .95F).coerceIn(0F, 1F)
     val imageSizeDiff = PlayerBarImageSizeExpanded - PlayerBarImageSizeCollapsed
@@ -138,31 +143,57 @@ private fun CollapsedPlayerBar(
     val collapsedSize = with(LocalDensity.current) {
         PlayerBarImageSizeCollapsed.roundToPx() * imageScale
     }
-    val imageSize = remember {
-        Animatable(PlayerBarImageSizeCollapsed.value * imageScale)
-    }
+    // TODO(elise): Should this animate?
+//    val imageSize = remember { Animatable(0F) }
+//    val imageOffset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
 //    val imageSize = PlayerBarImageSizeCollapsed * imageScale
+    val imageSize = PlayerBarImageSizeCollapsed.plus(
+        PlayerBarImageSizeExpanded
+            .minus(PlayerBarImageSizeCollapsed)
+            .times(imageAnimationOffset)
+    )
 
     if (playerUiState is UiState.Success) {
         val player = playerUiState.data
         AsyncAlbumImage(
             modifier = Modifier
                 .padding(padding)
+//                .onPlaced {
+//                    val endX = containerWidth.div(2)
+//                        .minus(PlayerBarImageSizeExpanded.div(2))
+//                        .minus(padding)
+//                    val endY = expandedImageTopPadding.minus(padding)
+//                    val imageSizeValue = PlayerBarImageSizeCollapsed.value.plus(
+//                        PlayerBarImageSizeExpanded
+//                            .minus(PlayerBarImageSizeCollapsed)
+//                            .times(imageAnimationOffset).value
+//                    )
+//                    scope.launch {
+//                        imageSize.snapTo(imageSizeValue)
+//                        imageOffset.snapTo(
+//                            Offset(
+//                                x = endX.value * imageAnimationOffset,
+//                                y = endY.value * expandedOffset
+//                            )
+//                        )
+//                    }
+//                }
                 .offset {
-                    scope.launch {
-                        imageSize.snapTo(PlayerBarImageSizeCollapsed.value * imageScale)
-                    }
+//                    IntOffset(
+//                        x = imageOffset.value.x.dp.roundToPx(),
+//                        y = imageOffset.value.y.dp.roundToPx()
+//                    )
                     val endX = containerWidth.div(2)
-                        .minus(PlayerBarImageSizeExpanded.div(2)).roundToPx()
+                        .minus(PlayerBarImageSizeExpanded.div(2))
+                        .minus(padding)
+                        .roundToPx()
                     val endY = expandedImageTopPadding.minus(padding).roundToPx()
-                    Log.e("###", "offset: $imageAnimationOffset exp: $expandedOffset, size: ${PlayerBarImageSizeCollapsed * imageScale}")
                     IntOffset(
                         x = (endX * imageAnimationOffset).fastRoundToInt(),
                         y = (endY * expandedOffset).fastRoundToInt()
                     )
                 }
-                // TODO(elise): Should this animate?
-                .size(imageSize.value.dp),
+                .size(imageSize),
             imageUri = player.playerState.track.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
             imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
@@ -244,6 +275,7 @@ private fun ExpandedPlayerBar(
     ) {
         AsyncAlbumImage(
             modifier = Modifier
+                .alpha(if (expandedOffset == 1F) 1F else 0F)
                 .align(Alignment.TopCenter)
                 .padding(top = expandedImageTopPadding)
                 .size(PlayerBarImageSizeExpanded),
