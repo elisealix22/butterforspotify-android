@@ -140,42 +140,13 @@ private fun CollapsedPlayerBar(
     expandedOffset: Float
 ) {
     Box(modifier = modifier) {
-        val scope = rememberCoroutineScope()
-
-        val fadeOffset = (expandedOffset / .10F).coerceIn(0F, 1F)
-        val alpha = 1F - fadeOffset
-        val imageHorizontalOffset = ((expandedOffset - .05F) / .25F).coerceIn(0F, 1F)
-        val imageVerticalOffset = ((expandedOffset - .3F) / .7F).coerceIn(0F, 1F)
-//        val imageAnimationOffset = ((expandedOffset - .05F) / .95F).coerceIn(0F, 1F)
-        val imageSizeDiff = PlayerBarImageSizeExpanded - PlayerBarImageSizeCollapsed
-    //    val imageScale = ((imageSizeDiff * expandedOffset) + PlayerBarImageSizeCollapsed) /
-    //            PlayerBarImageSizeCollapsed
-        val imageScale = ((imageSizeDiff * imageHorizontalOffset) + PlayerBarImageSizeCollapsed) /
-                PlayerBarImageSizeCollapsed
+        val rowAlpha = 1F - (expandedOffset / .05F).coerceIn(0F, 1F)
         val padding = (PlayerBarHeight - PlayerBarImageSizeCollapsed) / 2
-        val collapsedSize = with(LocalDensity.current) {
-            PlayerBarImageSizeCollapsed.roundToPx() * imageScale
-        }
-        // TODO(elise): Should this animate?
-//        val imageSize = remember { Animatable(0F) }
-        val imageOffset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
-    //    val imageSize = PlayerBarImageSizeCollapsed * imageScale
         val imageSize = PlayerBarImageSizeCollapsed.plus(
             PlayerBarImageSizeExpanded
                 .minus(PlayerBarImageSizeCollapsed)
-                .times(imageHorizontalOffset)
+                .times(expandedOffset)
         )
-        val expandedPx = with(LocalDensity.current) {
-            PlayerBarImageSizeExpanded.roundToPx()
-        }
-        val containerWidthPx = with(LocalDensity.current) {
-            containerWidth.roundToPx()
-        }
-        val paddingPx = with(LocalDensity.current) {
-            padding.roundToPx()
-        }
-
-        val parentHorizontalPadding = Dimen.PaddingOneAndAHalf
         if (playerUiState is UiState.Success) {
             val player = playerUiState.data
             AsyncAlbumImage(
@@ -186,14 +157,13 @@ private fun CollapsedPlayerBar(
                         val endX = containerWidth.div(2)
                             .minus(PlayerBarImageSizeExpanded.div(2))
                             .minus(padding)
-                            .minus((1 - expandedOffset).times(parentHorizontalPadding))
                         val endY = containerHeight.times(-1)
                             .plus(expandedImageTopPadding)
                             .plus(PlayerBarImageSizeExpanded)
                             .plus(padding)
                         IntOffset(
-                            x = (endX * imageHorizontalOffset).roundToPx(),
-                            y = (endY * imageVerticalOffset).roundToPx()
+                            x = (endX * expandedOffset).roundToPx(),
+                            y = (endY * expandedOffset).roundToPx()
                         )
                     },
                 imageUri = player.playerState.track.imageUri,
@@ -206,56 +176,57 @@ private fun CollapsedPlayerBar(
                 )
             )
         }
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(PlayerBarHeight)
-                .alpha(alpha)
-                .padding(start = PlayerBarImageSizeCollapsed + padding) // padding
-        ) {
-            when (playerUiState) {
-                is UiState.Success -> {
-                    val player = playerUiState.data
-    //                    AsyncAlbumImage(
-    //                        imageUri = player.playerState.track.imageUri,
-    //                        imagesApi = player.spotifyApis?.imagesApi,
-    //                        imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
-    //                        size = PlayerBarImageSizeCollapsed,
-    //                        contentDescription = stringResource(
-    //                            R.string.album_art_content_description,
-    //                            player.playerState.track.name
-    //                        )
-    //                    )
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.CenterVertically)
-                            .weight(1F)
-                            .padding(start = Dimen.PaddingHalf)
-                    ) {
-                        Text(
-                            text = player.playerState.track.name,
-                            style = TextStyleAlbumTitle,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        val artistNames = remember(player.playerState.track.artists) {
-                            player.playerState.track.artists.joinToString { it.name }
+        if (rowAlpha > 0F) {
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(PlayerBarHeight)
+                    .alpha(rowAlpha)
+                    .padding(start = PlayerBarImageSizeCollapsed + padding) // padding
+            ) {
+                when (playerUiState) {
+                    is UiState.Success -> {
+                        val player = playerUiState.data
+                        //                    AsyncAlbumImage(
+                        //                        imageUri = player.playerState.track.imageUri,
+                        //                        imagesApi = player.spotifyApis?.imagesApi,
+                        //                        imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
+                        //                        size = PlayerBarImageSizeCollapsed,
+                        //                        contentDescription = stringResource(
+                        //                            R.string.album_art_content_description,
+                        //                            player.playerState.track.name
+                        //                        )
+                        //                    )
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .weight(1F)
+                                .padding(start = Dimen.PaddingHalf)
+                        ) {
+                            Text(
+                                text = player.playerState.track.name,
+                                style = TextStyleAlbumTitle,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            val artistNames = remember(player.playerState.track.artists) {
+                                player.playerState.track.artists.joinToString { it.name }
+                            }
+                            Text(
+                                text = artistNames,
+                                style = TextStyleArtistTitle,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
-                        Text(
-                            text = artistNames,
-                            style = TextStyleArtistTitle,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        PlayButton(player = player)
                     }
-                    if (alpha > 0F) {
-                        PlayButton(modifier = Modifier.alpha(alpha), player = player)
-                    }
-                }
-                is UiState.Error -> Error(playerUiState.message, playerUiState.onTryAgain)
-                is UiState.Loading, is UiState.Initial -> {
-                    playerUiState.data.let {
-                        if (it == null) Connecting() else PlayerContent(player = it)
+
+                    is UiState.Error -> Error(playerUiState.message, playerUiState.onTryAgain)
+                    is UiState.Loading, is UiState.Initial -> {
+                        playerUiState.data.let {
+                            if (it == null) Connecting() else PlayerContent(player = it)
+                        }
                     }
                 }
             }
