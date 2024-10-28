@@ -4,5 +4,5 @@ import com.elisealix22.butterforspotify.data.model.track.Track
 
 data class PlaylistHistory(
     val track: Track,
-    val context: HistoryContext
+    val context: HistoryContext?
 )
