@@ -3,7 +3,7 @@ package com.elisealix22.butterforspotify.player
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiMessage
@@ -39,6 +40,7 @@ import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.text
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
+import com.elisealix22.butterforspotify.ui.theme.LandscapeThemePreview
 import com.elisealix22.butterforspotify.ui.theme.TextStyleAlbumTitle
 import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
@@ -47,12 +49,19 @@ import com.spotify.protocol.types.Image
 
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSizeCollapsed = 48.dp
-private val PlayerBarImageSizeExpanded = 230.dp
 private val PlayerBarRoundedCorner = 4.dp
 
 private data class SurfaceConfig(
     val roundedCornerShape: RoundedCornerShape,
     val shadowElevation: Dp
+)
+
+private data class ExpandedImageConfig(
+    val isLandscape: Boolean,
+    val expandedImageSize: Dp,
+    val expandedImagePadding: Dp,
+    val expandedImageX: Dp,
+    val expandedImageY: Dp
 )
 
 @Composable
@@ -74,14 +83,38 @@ fun PlayerBar(
             )
         }
     }
-    val expandedImageTopPadding = containerHeight / 4
+    val expandedImageConfig = remember(containerWidth, containerHeight) {
+        val isLandscape = containerWidth > containerHeight
+        val expandedImagePadding = Dimen.Padding
+        val expandedImageSize = min(containerWidth, containerHeight).minus(
+            expandedImagePadding.times(2)
+        )
+        ExpandedImageConfig(
+            isLandscape = isLandscape,
+            expandedImagePadding = expandedImagePadding,
+            expandedImageSize = min(containerWidth, containerHeight).minus(
+                expandedImagePadding.times(2)
+            ),
+            expandedImageX = if (isLandscape) {
+                0.dp
+            } else {
+                containerWidth.div(2)
+                    .minus(expandedImageSize.div(2))
+                    .minus(expandedImagePadding)
+            },
+            expandedImageY = containerHeight.times(-1)
+                .plus(expandedImagePadding)
+                .plus(expandedImageSize)
+        )
+    }
     Surface(
         modifier = modifier
             .expandablePlayerBar(
                 containerWidth = containerWidth,
                 containerHeight = containerHeight,
                 horizontalPadding = horizontalPadding,
-                enabled = playerUiState is UiState.Success
+                enabled = playerUiState is UiState.Success,
+                collapse = playerUiState is UiState.Error
             ) { offset ->
                 expandedOffset.floatValue = offset
                 onExpandChange(offset)
@@ -93,16 +126,14 @@ fun PlayerBar(
             CollapsedPlayerBar(
                 modifier = Modifier.align(Alignment.BottomStart),
                 playerUiState = playerUiState,
-                containerWidth = containerWidth,
-                containerHeight = containerHeight,
-                expandedImageTopPadding = expandedImageTopPadding,
+                expandedImageConfig = expandedImageConfig,
                 expandedOffset = expandedOffset.floatValue
             )
             ExpandedPlayerBar(
-                modifier = Modifier.align(Alignment.TopCenter),
+                modifier = Modifier.align(Alignment.TopStart),
                 playerUiState = playerUiState,
-                expandedOffset = expandedOffset.floatValue,
-                expandedImageTopPadding = expandedImageTopPadding
+                expandedImageConfig = expandedImageConfig,
+                expandedOffset = expandedOffset.floatValue
             )
         }
     }
@@ -112,9 +143,7 @@ fun PlayerBar(
 private fun CollapsedPlayerBar(
     modifier: Modifier = Modifier,
     playerUiState: UiState<Player>,
-    containerWidth: Dp,
-    containerHeight: Dp,
-    expandedImageTopPadding: Dp,
+    expandedImageConfig: ExpandedImageConfig,
     expandedOffset: Float
 ) {
     val collapsedImagePadding = PlayerBarHeight.minus(PlayerBarImageSizeCollapsed).div(2)
@@ -123,18 +152,15 @@ private fun CollapsedPlayerBar(
             is UiState.Success -> CollapsedPlayerContent(
                 player = playerUiState.data,
                 expandedOffset = expandedOffset,
-                containerWidth = containerWidth,
-                containerHeight = containerHeight,
                 collapsedImagePadding = collapsedImagePadding,
-                expandedImageTopPadding = expandedImageTopPadding
+                expandedImageConfig = expandedImageConfig
             )
             is UiState.Loading,
             is UiState.Initial -> CollapsedLoadingContent(
                 player = playerUiState.data,
-                containerWidth = containerWidth,
-                containerHeight = containerHeight,
+                expandedOffset = expandedOffset,
                 collapsedImagePadding = collapsedImagePadding,
-                expandedImageTopPadding = expandedImageTopPadding
+                expandedImageConfig = expandedImageConfig
             )
             is UiState.Error -> CollapsedErrorContent(
                 uiErrorMessage = playerUiState.message,
@@ -149,29 +175,49 @@ private fun CollapsedPlayerBar(
 private fun ExpandedPlayerBar(
     modifier: Modifier = Modifier,
     expandedOffset: Float,
-    expandedImageTopPadding: Dp,
+    expandedImageConfig: ExpandedImageConfig,
     playerUiState: UiState<Player>
 ) {
+    val player = playerUiState.data ?: return
     Box(
         modifier = modifier
             .fillMaxSize()
+            .padding(expandedImageConfig.expandedImagePadding)
             .alpha(expandedOffset)
     ) {
         AsyncAlbumImage(
             modifier = Modifier
                 .alpha(if (expandedOffset == 1F) 1F else 0F)
-                .align(Alignment.TopCenter)
-                .padding(top = expandedImageTopPadding)
-                .size(PlayerBarImageSizeExpanded),
-            imageUri = playerUiState.data?.playerState?.track?.imageUri,
-            imagesApi = playerUiState.data?.spotifyApis?.imagesApi,
-            imageDimension = Image.Dimension.THUMBNAIL,
-            size = PlayerBarImageSizeExpanded,
+                .size(expandedImageConfig.expandedImageSize),
+            imageUri = player.playerState.track?.imageUri,
+            imagesApi = player.spotifyApis?.imagesApi,
+            imageDimension = Image.Dimension.LARGE,
+            size = expandedImageConfig.expandedImageSize,
             contentDescription = stringResource(
-                R.string.album_art_content_description,
-                playerUiState.data?.playerState?.track?.name ?: ""
+                R.string.track_art_content_description,
+                player.playerState.track?.name ?: ""
             )
         )
+        Column(
+            modifier = if (expandedImageConfig.isLandscape) {
+                Modifier.fillMaxWidth()
+                    .padding(start = expandedImageConfig.expandedImageSize)
+                    .align(Alignment.Center)
+            } else {
+                Modifier.fillMaxHeight()
+                    .padding(top = expandedImageConfig.expandedImageSize)
+                    .align(Alignment.Center)
+            }
+        ) {
+            PlayButton(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                player = player
+            )
+            TrackInfo(
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                player = player
+            )
+        }
     }
 }
 
@@ -180,15 +226,13 @@ private fun CollapsedPlayerContent(
     modifier: Modifier = Modifier,
     player: Player,
     expandedOffset: Float,
-    containerWidth: Dp,
-    containerHeight: Dp,
-    expandedImageTopPadding: Dp,
+    expandedImageConfig: ExpandedImageConfig,
     collapsedImagePadding: Dp
 ) {
     Box(modifier = modifier) {
         val rowAlpha = 1F - (expandedOffset / .05F).coerceIn(0F, 1F)
         val imageSize = PlayerBarImageSizeCollapsed.plus(
-            PlayerBarImageSizeExpanded
+            expandedImageConfig.expandedImageSize
                 .minus(PlayerBarImageSizeCollapsed)
                 .times(expandedOffset)
         )
@@ -197,16 +241,11 @@ private fun CollapsedPlayerContent(
                 .padding(collapsedImagePadding)
                 .size(imageSize)
                 .offset {
-                    val endX = containerWidth.div(2)
-                        .minus(PlayerBarImageSizeExpanded.div(2))
-                        .minus(collapsedImagePadding)
-                    val endY = containerHeight.times(-1)
-                        .plus(expandedImageTopPadding)
-                        .plus(PlayerBarImageSizeExpanded)
-                        .plus(collapsedImagePadding)
+                    val offsetX = expandedImageConfig.expandedImageX.plus(collapsedImagePadding)
+                    val offsetY = expandedImageConfig.expandedImageY.plus(collapsedImagePadding)
                     IntOffset(
-                        x = (endX * expandedOffset).roundToPx(),
-                        y = (endY * expandedOffset).roundToPx()
+                        x = (offsetX * expandedOffset).roundToPx(),
+                        y = (offsetY * expandedOffset).roundToPx()
                     )
                 },
             imageUri = player.playerState.track.imageUri,
@@ -214,7 +253,7 @@ private fun CollapsedPlayerContent(
             imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
             size = PlayerBarImageSizeCollapsed,
             contentDescription = stringResource(
-                R.string.album_art_content_description,
+                R.string.track_art_content_description,
                 player.playerState.track.name
             )
         )
@@ -229,8 +268,16 @@ private fun CollapsedPlayerContent(
                             .plus(collapsedImagePadding.times(2))
                     )
             ) {
-                TrackInfo(player = player)
-                PlayButton(player = player)
+                TrackInfo(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .weight(1F),
+                    player = player
+                )
+                PlayButton(
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    player = player
+                )
             }
         }
     }
@@ -239,22 +286,20 @@ private fun CollapsedPlayerContent(
 @Composable
 private fun CollapsedLoadingContent(
     modifier: Modifier = Modifier,
-    containerWidth: Dp,
-    containerHeight: Dp,
     collapsedImagePadding: Dp,
-    expandedImageTopPadding: Dp,
+    expandedImageConfig: ExpandedImageConfig,
+    expandedOffset: Float,
     player: Player?
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(PlayerBarHeight)
-    ) {
-        player.let {
-            if (it == null) {
+    player.let {
+        if (it == null) {
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(collapsedImagePadding)
+            ) {
                 Box(
                     modifier = Modifier
-                        .padding(start = collapsedImagePadding)
                         .size(PlayerBarImageSizeCollapsed)
                         .align(Alignment.CenterVertically)
                 ) {
@@ -268,21 +313,19 @@ private fun CollapsedLoadingContent(
                 Text(
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
-                        .padding(start = collapsedImagePadding, end = Dimen.Padding),
+                        .padding(horizontal = Dimen.PaddingHalf),
                     text = stringResource(R.string.connecting_to_spotify),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-            } else {
-                CollapsedPlayerContent(
-                    player = it,
-                    expandedOffset = 0F,
-                    containerWidth = containerWidth,
-                    containerHeight = containerHeight,
-                    expandedImageTopPadding = expandedImageTopPadding,
-                    collapsedImagePadding = collapsedImagePadding
-                )
             }
+        } else {
+            CollapsedPlayerContent(
+                player = it,
+                expandedOffset = expandedOffset,
+                expandedImageConfig = expandedImageConfig,
+                collapsedImagePadding = collapsedImagePadding
+            )
         }
     }
 }
@@ -297,8 +340,7 @@ private fun CollapsedErrorContent(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(PlayerBarHeight)
-            .padding(start = collapsedImagePadding)
+            .padding(collapsedImagePadding)
     ) {
         IconButton(
             modifier = Modifier
@@ -317,7 +359,7 @@ private fun CollapsedErrorContent(
         Text(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
-                .padding(start = Dimen.PaddingHalf, end = Dimen.Padding),
+                .padding(horizontal = Dimen.PaddingHalf),
             text = uiErrorMessage?.text() ?: stringResource(R.string.ui_state_error),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
@@ -326,13 +368,13 @@ private fun CollapsedErrorContent(
 }
 
 @Composable
-private fun RowScope.PlayButton(
+private fun PlayButton(
     modifier: Modifier = Modifier,
     player: Player
 ) {
     val isPaused = player.playerState.isPaused
     IconButton(
-        modifier = modifier.align(Alignment.CenterVertically),
+        modifier = modifier,
         onClick = {
             if (isPaused) {
                 player.spotifyApis?.playerApi?.resume()
@@ -358,14 +400,12 @@ private fun RowScope.PlayButton(
 }
 
 @Composable
-private fun RowScope.TrackInfo(
+private fun TrackInfo(
     modifier: Modifier = Modifier,
     player: Player
 ) {
     Column(
         modifier = modifier
-            .align(Alignment.CenterVertically)
-            .weight(1F)
     ) {
         Text(
             text = player.playerState.track.name,
@@ -440,6 +480,100 @@ fun PlayerBarErrorLongMessagePreview() {
     ButterForSpotifyTheme {
         Surface {
             PlayerBar(playerUiState = uiState)
+        }
+    }
+}
+
+@ThemePreview
+@Composable
+fun ExpandedPlayerBarPreview() {
+    val uiState = UiState.Success(MockPlayerWithLongTrackTitle)
+    val containerWidth = LocalConfiguration.current.screenWidthDp.dp
+    val containerHeight = LocalConfiguration.current.screenWidthDp.dp
+    val expandedImagePadding = Dimen.Padding
+    val expandedImageSize = min(containerWidth, containerHeight).minus(
+        expandedImagePadding.times(2)
+    )
+    val expandedImageConfig = ExpandedImageConfig(
+        isLandscape = false,
+        expandedImagePadding = expandedImagePadding,
+        expandedImageSize = containerWidth.minus(expandedImagePadding.times(2)),
+        expandedImageX = containerWidth.div(2)
+            .minus(expandedImageSize.div(2))
+            .minus(expandedImagePadding),
+        expandedImageY = containerHeight.times(-1)
+            .plus(expandedImagePadding)
+            .plus(expandedImageSize)
+    )
+    ButterForSpotifyTheme {
+        Surface {
+            ExpandedPlayerBar(
+                playerUiState = uiState,
+                expandedOffset = 1F,
+                expandedImageConfig = expandedImageConfig
+            )
+        }
+    }
+}
+
+@ThemePreview
+@Composable
+fun ExpandedPlayerBarCachedPreview() {
+    val uiState = UiState.Loading(MockPlayerWithCachedState)
+    val containerWidth = LocalConfiguration.current.screenWidthDp.dp
+    val containerHeight = LocalConfiguration.current.screenWidthDp.dp
+    val expandedImagePadding = Dimen.Padding
+    val expandedImageSize = min(containerWidth, containerHeight).minus(
+        expandedImagePadding.times(2)
+    )
+    val expandedImageConfig = ExpandedImageConfig(
+        isLandscape = false,
+        expandedImagePadding = expandedImagePadding,
+        expandedImageSize = containerWidth.minus(expandedImagePadding.times(2)),
+        expandedImageX = containerWidth.div(2)
+            .minus(expandedImageSize.div(2))
+            .minus(expandedImagePadding),
+        expandedImageY = containerHeight.times(-1)
+            .plus(expandedImagePadding)
+            .plus(expandedImageSize)
+    )
+    ButterForSpotifyTheme {
+        Surface {
+            ExpandedPlayerBar(
+                playerUiState = uiState,
+                expandedOffset = 1F,
+                expandedImageConfig = expandedImageConfig
+            )
+        }
+    }
+}
+
+@LandscapeThemePreview
+@Composable
+fun ExpandedPlayerBarLandscapePreview() {
+    val uiState = UiState.Success(MockPlayerWithLongTrackTitle)
+    val containerWidth = LocalConfiguration.current.screenWidthDp.dp
+    val containerHeight = LocalConfiguration.current.screenWidthDp.dp
+    val expandedImagePadding = Dimen.Padding
+    val expandedImageSize = min(containerWidth, containerHeight).minus(
+        expandedImagePadding.times(2)
+    )
+    val expandedImageConfig = ExpandedImageConfig(
+        isLandscape = true,
+        expandedImagePadding = expandedImagePadding,
+        expandedImageSize = containerHeight.minus(expandedImagePadding.times(2)),
+        expandedImageX = 0.dp,
+        expandedImageY = containerHeight.times(-1)
+            .plus(expandedImagePadding)
+            .plus(expandedImageSize)
+    )
+    ButterForSpotifyTheme {
+        Surface {
+            ExpandedPlayerBar(
+                playerUiState = uiState,
+                expandedOffset = 1F,
+                expandedImageConfig = expandedImageConfig
+            )
         }
     }
 }

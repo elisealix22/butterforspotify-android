@@ -12,14 +12,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -31,7 +34,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-private val MaximumVelocity = Velocity(1F, 100F)
+private val MaximumVelocity = Velocity(1F, 500F)
 private val AnimationSpec = SpringSpec<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,
     stiffness = Spring.StiffnessMediumLow
@@ -43,10 +46,12 @@ fun Modifier.expandablePlayerBar(
     containerHeight: Dp,
     horizontalPadding: Dp,
     enabled: Boolean = true,
+    collapse: Boolean = false,
     onExpandChange: (offset: Float) -> Unit = {}
 ): Modifier {
+    val isExpanded = rememberSaveable { mutableStateOf(false) }
     val playerBarHeight = remember {
-        Animatable(PlayerBarHeight.value).apply {
+        Animatable(if (isExpanded.value) containerHeight.value else PlayerBarHeight.value).apply {
             updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
         }
     }
@@ -67,18 +72,32 @@ fun Modifier.expandablePlayerBar(
     }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
-    var isMovingUp = false
     return this
         .size(width = playerBarWidth.value.dp, height = playerBarHeight.value.dp)
-        .onSizeChanged { onExpandChange(expandedOffset) }
+        .onSizeChanged {
+            isExpanded.value = expandedOffset == 1F
+            onExpandChange(expandedOffset)
+        }
+        .onPlaced {
+            if (collapse && expandedOffset > 0F) {
+                scope.launch {
+                    playerBarHeight.stop()
+                    playerBarHeight.animateTo(
+                        playerBarHeight.lowerBound ?: error("Lower bound not set"),
+                        AnimationSpec
+                    )
+                }
+            }
+        }
         .clickable(
             enabled = enabled && expandedOffset == 0F,
             onClickLabel = stringResource(R.string.open_fullscreen_player),
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 scope.launch {
+                    playerBarHeight.stop()
                     playerBarHeight.animateTo(
-                        targetValue = containerHeight.value,
+                        targetValue = playerBarHeight.upperBound ?: error("Upper bound not set"),
                         animationSpec = AnimationSpec
                     )
                 }
@@ -91,6 +110,8 @@ fun Modifier.expandablePlayerBar(
             coroutineScope {
                 val velocityTracker = VelocityTracker()
                 awaitEachGesture {
+                    var isMovingUp = false
+                    var isDragging = false
                     val down = awaitFirstDown()
                     var change =
                         awaitVerticalTouchSlopOrCancellation(down.id) { change, _ ->
@@ -102,6 +123,7 @@ fun Modifier.expandablePlayerBar(
                         if (change != null && change.pressed) {
                             velocityTracker.addPointerInputChange(change)
                             isMovingUp = change.previousPosition.y > change.position.y
+                            isDragging = change.previousPosition.y != change.position.y
                             val changeDp = change.positionChange().y.toDp().value
                             val targetValue = playerBarHeight.value - changeDp
                             change.consume()
@@ -116,7 +138,7 @@ fun Modifier.expandablePlayerBar(
                         playerBarHeight.lowerBound
                     } ?: error("Player bar bounds not set.")
                     val velocity = velocityTracker.calculateVelocity(MaximumVelocity).y
-                    if (endHeight != playerBarHeight.value) {
+                    if (isDragging && endHeight != playerBarHeight.value) {
                         launch {
                             playerBarHeight.animateTo(
                                 targetValue = endHeight,
