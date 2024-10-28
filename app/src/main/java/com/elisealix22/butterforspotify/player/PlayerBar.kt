@@ -1,5 +1,6 @@
 package com.elisealix22.butterforspotify.player
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,10 +19,14 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,6 +42,7 @@ import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
+import com.elisealix22.butterforspotify.ui.isError
 import com.elisealix22.butterforspotify.ui.text
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
@@ -73,13 +79,14 @@ fun PlayerBar(
     horizontalPadding: Dp = Dimen.PaddingOneAndAHalf,
     onExpandChange: (offset: Float) -> Unit = {}
 ) {
-    val expandedOffset = remember { mutableFloatStateOf(0F) }
+    val expandState = rememberSaveable { mutableStateOf(PlayerBarExpandState.Collapsed) }
+    val expandOffset = remember { mutableFloatStateOf(0F) }
     val surfaceConfig by remember {
         derivedStateOf {
-            val corner = (1F - expandedOffset.floatValue) * PlayerBarRoundedCorner.value
+            val corner = (1F - expandOffset.floatValue) * PlayerBarRoundedCorner.value
             SurfaceConfig(
                 roundedCornerShape = RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp),
-                shadowElevation = if (expandedOffset.floatValue == 1F) 0.dp else 8.dp
+                shadowElevation = if (expandOffset.floatValue == 1F) 0.dp else 8.dp
             )
         }
     }
@@ -107,6 +114,11 @@ fun PlayerBar(
                 .plus(expandedImageSize)
         )
     }
+    LaunchedEffect(playerUiState) {
+        if (expandState.value == PlayerBarExpandState.Expanded && playerUiState.isError()) {
+            expandState.value = PlayerBarExpandState.Collapsed
+        }
+    }
     Surface(
         modifier = modifier
             .expandablePlayerBar(
@@ -114,9 +126,9 @@ fun PlayerBar(
                 containerHeight = containerHeight,
                 horizontalPadding = horizontalPadding,
                 enabled = playerUiState is UiState.Success,
-                collapse = playerUiState is UiState.Error
+                expandState = expandState
             ) { offset ->
-                expandedOffset.floatValue = offset
+                expandOffset.floatValue = offset
                 onExpandChange(offset)
             },
         shape = surfaceConfig.roundedCornerShape,
@@ -127,13 +139,16 @@ fun PlayerBar(
                 modifier = Modifier.align(Alignment.BottomStart),
                 playerUiState = playerUiState,
                 expandedImageConfig = expandedImageConfig,
-                expandedOffset = expandedOffset.floatValue
+                expandOffset = expandOffset.floatValue
             )
             ExpandedPlayerBar(
                 modifier = Modifier.align(Alignment.TopStart),
                 playerUiState = playerUiState,
                 expandedImageConfig = expandedImageConfig,
-                expandedOffset = expandedOffset.floatValue
+                expandOffset = expandOffset.floatValue,
+                onCloseClick = {
+                    expandState.value = PlayerBarExpandState.Collapsed
+                }
             )
         }
     }
@@ -144,21 +159,21 @@ private fun CollapsedPlayerBar(
     modifier: Modifier = Modifier,
     playerUiState: UiState<Player>,
     expandedImageConfig: ExpandedImageConfig,
-    expandedOffset: Float
+    expandOffset: Float
 ) {
     val collapsedImagePadding = PlayerBarHeight.minus(PlayerBarImageSizeCollapsed).div(2)
     Box(modifier = modifier) {
         when (playerUiState) {
             is UiState.Success -> CollapsedPlayerContent(
                 player = playerUiState.data,
-                expandedOffset = expandedOffset,
+                expandOffset = expandOffset,
                 collapsedImagePadding = collapsedImagePadding,
                 expandedImageConfig = expandedImageConfig
             )
             is UiState.Loading,
             is UiState.Initial -> CollapsedLoadingContent(
                 player = playerUiState.data,
-                expandedOffset = expandedOffset,
+                expandOffset = expandOffset,
                 collapsedImagePadding = collapsedImagePadding,
                 expandedImageConfig = expandedImageConfig
             )
@@ -174,21 +189,37 @@ private fun CollapsedPlayerBar(
 @Composable
 private fun ExpandedPlayerBar(
     modifier: Modifier = Modifier,
-    expandedOffset: Float,
+    expandOffset: Float,
     expandedImageConfig: ExpandedImageConfig,
-    playerUiState: UiState<Player>
+    playerUiState: UiState<Player>,
+    onCloseClick: () -> Unit = {}
 ) {
     val player = playerUiState.data ?: return
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(expandedImageConfig.expandedImagePadding)
-            .alpha(expandedOffset)
+            .alpha(expandOffset)
     ) {
+        IconButton(
+            modifier = Modifier
+                .align(Alignment.TopEnd),
+            onClick = onCloseClick
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_x_24),
+                contentDescription = stringResource(R.string.close_fullscreen_player)
+            )
+        }
         AsyncAlbumImage(
             modifier = Modifier
-                .alpha(if (expandedOffset == 1F) 1F else 0F)
-                .size(expandedImageConfig.expandedImageSize),
+                .alpha(if (expandOffset == 1F) 1F else 0F)
+                .size(expandedImageConfig.expandedImageSize)
+                .padding(top = if (expandedImageConfig.isLandscape) {
+                    0.dp
+                } else {
+                    48.dp
+                }),
             imageUri = player.playerState.track?.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
             imageDimension = Image.Dimension.LARGE,
@@ -200,11 +231,13 @@ private fun ExpandedPlayerBar(
         )
         Column(
             modifier = if (expandedImageConfig.isLandscape) {
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .padding(start = expandedImageConfig.expandedImageSize)
                     .align(Alignment.Center)
             } else {
-                Modifier.fillMaxHeight()
+                Modifier
+                    .fillMaxHeight()
                     .padding(top = expandedImageConfig.expandedImageSize)
                     .align(Alignment.Center)
             }
@@ -225,16 +258,16 @@ private fun ExpandedPlayerBar(
 private fun CollapsedPlayerContent(
     modifier: Modifier = Modifier,
     player: Player,
-    expandedOffset: Float,
+    expandOffset: Float,
     expandedImageConfig: ExpandedImageConfig,
     collapsedImagePadding: Dp
 ) {
     Box(modifier = modifier) {
-        val rowAlpha = 1F - (expandedOffset / .05F).coerceIn(0F, 1F)
+        val rowAlpha = 1F - (expandOffset / .05F).coerceIn(0F, 1F)
         val imageSize = PlayerBarImageSizeCollapsed.plus(
             expandedImageConfig.expandedImageSize
                 .minus(PlayerBarImageSizeCollapsed)
-                .times(expandedOffset)
+                .times(expandOffset)
         )
         AsyncAlbumImage(
             modifier = Modifier
@@ -244,8 +277,8 @@ private fun CollapsedPlayerContent(
                     val offsetX = expandedImageConfig.expandedImageX.plus(collapsedImagePadding)
                     val offsetY = expandedImageConfig.expandedImageY.plus(collapsedImagePadding)
                     IntOffset(
-                        x = (offsetX * expandedOffset).roundToPx(),
-                        y = (offsetY * expandedOffset).roundToPx()
+                        x = (offsetX * expandOffset).roundToPx(),
+                        y = (offsetY * expandOffset).roundToPx()
                     )
                 },
             imageUri = player.playerState.track.imageUri,
@@ -288,7 +321,7 @@ private fun CollapsedLoadingContent(
     modifier: Modifier = Modifier,
     collapsedImagePadding: Dp,
     expandedImageConfig: ExpandedImageConfig,
-    expandedOffset: Float,
+    expandOffset: Float,
     player: Player?
 ) {
     player.let {
@@ -322,7 +355,7 @@ private fun CollapsedLoadingContent(
         } else {
             CollapsedPlayerContent(
                 player = it,
-                expandedOffset = expandedOffset,
+                expandOffset = expandOffset,
                 expandedImageConfig = expandedImageConfig,
                 collapsedImagePadding = collapsedImagePadding
             )
@@ -509,7 +542,7 @@ fun ExpandedPlayerBarPreview() {
         Surface {
             ExpandedPlayerBar(
                 playerUiState = uiState,
-                expandedOffset = 1F,
+                expandOffset = 1F,
                 expandedImageConfig = expandedImageConfig
             )
         }
@@ -541,7 +574,7 @@ fun ExpandedPlayerBarCachedPreview() {
         Surface {
             ExpandedPlayerBar(
                 playerUiState = uiState,
-                expandedOffset = 1F,
+                expandOffset = 1F,
                 expandedImageConfig = expandedImageConfig
             )
         }
@@ -571,7 +604,7 @@ fun ExpandedPlayerBarLandscapePreview() {
         Surface {
             ExpandedPlayerBar(
                 playerUiState = uiState,
-                expandedOffset = 1F,
+                expandOffset = 1F,
                 expandedImageConfig = expandedImageConfig
             )
         }

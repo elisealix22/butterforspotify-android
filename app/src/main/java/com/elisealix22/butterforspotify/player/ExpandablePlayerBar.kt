@@ -1,5 +1,6 @@
 package com.elisealix22.butterforspotify.player
 
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
@@ -10,19 +11,19 @@ import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
 import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
-import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -33,6 +34,7 @@ import com.elisealix22.butterforspotify.R
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
 private val MaximumVelocity = Velocity(1F, 500F)
 private val AnimationSpec = SpringSpec<Float>(
@@ -40,23 +42,35 @@ private val AnimationSpec = SpringSpec<Float>(
     stiffness = Spring.StiffnessMediumLow
 )
 
+@Serializable
+enum class PlayerBarExpandState {
+    Expanded,
+    Collapsed
+}
+
 @Composable
 fun Modifier.expandablePlayerBar(
     containerWidth: Dp,
     containerHeight: Dp,
     horizontalPadding: Dp,
     enabled: Boolean = true,
-    collapse: Boolean = false,
+    expandState: MutableState<PlayerBarExpandState> =
+        remember { mutableStateOf(PlayerBarExpandState.Collapsed) },
     onExpandChange: (offset: Float) -> Unit = {}
 ): Modifier {
-    val isExpanded = rememberSaveable { mutableStateOf(false) }
     val playerBarHeight = remember {
-        Animatable(if (isExpanded.value) containerHeight.value else PlayerBarHeight.value).apply {
+        Animatable(
+            if (expandState.value == PlayerBarExpandState.Expanded) {
+                containerHeight.value
+            } else {
+                PlayerBarHeight.value
+            }
+        ).apply {
             updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
         }
     }
     // Value between 0F and 1F where 0F is collapsed and 1F is expanded.
-    val expandedOffset by remember {
+    val expandOffset by remember {
         derivedStateOf {
             val availableHeight = containerHeight.value - PlayerBarHeight.value
             val traveledHeight = playerBarHeight.value - PlayerBarHeight.value
@@ -67,40 +81,50 @@ fun Modifier.expandablePlayerBar(
     val playerBarWidth = remember {
         derivedStateOf {
             val expandableWidth = containerWidth.value - minPlayerBarWidth
-            minPlayerBarWidth + (expandedOffset * expandableWidth)
+            minPlayerBarWidth + (expandOffset * expandableWidth)
         }
     }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    val animateExpand: (isExpand: Boolean) -> Unit = { isExpand ->
+        scope.launch {
+            if (isExpand) {
+                playerBarHeight.stop()
+                playerBarHeight.animateTo(
+                    targetValue = playerBarHeight.upperBound ?: error("Upper bound not set"),
+                    animationSpec = AnimationSpec
+                )
+            } else {
+                playerBarHeight.stop()
+                playerBarHeight.animateTo(
+                    targetValue = playerBarHeight.lowerBound ?: error("Lower bound not set"),
+                    animationSpec = AnimationSpec
+                )
+            }
+        }
+    }
+    LaunchedEffect(expandState.value) {
+        when (expandState.value) {
+            PlayerBarExpandState.Expanded -> if (expandOffset < 1F) animateExpand(true)
+            PlayerBarExpandState.Collapsed -> if (expandOffset > 0F) animateExpand(false)
+        }
+    }
     return this
         .size(width = playerBarWidth.value.dp, height = playerBarHeight.value.dp)
         .onSizeChanged {
-            isExpanded.value = expandedOffset == 1F
-            onExpandChange(expandedOffset)
-        }
-        .onPlaced {
-            if (collapse && expandedOffset > 0F) {
-                scope.launch {
-                    playerBarHeight.stop()
-                    playerBarHeight.animateTo(
-                        playerBarHeight.lowerBound ?: error("Lower bound not set"),
-                        AnimationSpec
-                    )
-                }
+            expandState.value = if (expandOffset == 1F) {
+                PlayerBarExpandState.Expanded
+            } else {
+                PlayerBarExpandState.Collapsed
             }
+            onExpandChange(expandOffset)
         }
         .clickable(
-            enabled = enabled && expandedOffset == 0F,
+            enabled = enabled && expandOffset == 0F,
             onClickLabel = stringResource(R.string.open_fullscreen_player),
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                scope.launch {
-                    playerBarHeight.stop()
-                    playerBarHeight.animateTo(
-                        targetValue = playerBarHeight.upperBound ?: error("Upper bound not set"),
-                        animationSpec = AnimationSpec
-                    )
-                }
+                animateExpand(true)
             },
             indication = null,
             interactionSource = null

@@ -25,6 +25,7 @@
     <string name="connecting_to_spotify">Connecting to Spotify…</string>
     <string name="track_art_content_description">%s art</string>
     <string name="open_fullscreen_player">Open fullscreen player</string>
+    <string name="close_fullscreen_player">Close fullscreen player</string>
 
     <!-- Music -->
     <string name="recently" comment="Recently played albums">Recently played</string>
