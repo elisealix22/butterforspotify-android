@@ -102,7 +102,7 @@ fun PlayerBar(
                 modifier = Modifier.align(Alignment.TopCenter),
                 playerUiState = playerUiState,
                 expandedOffset = expandedOffset.floatValue,
-                expandedImageTopPadding = expandedImageTopPadding,
+                expandedImageTopPadding = expandedImageTopPadding
             )
         }
     }

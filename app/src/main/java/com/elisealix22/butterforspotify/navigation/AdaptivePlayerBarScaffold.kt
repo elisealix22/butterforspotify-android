@@ -61,7 +61,9 @@ fun AdaptivePlayerBarScaffold(
     val playerBarExpandedOffset = remember { mutableFloatStateOf(0F) }
     val selectedItemColors = selectedItemColors()
     val unselectedItemColors = unselectedItemColors()
-    val verticalOffset = if (isLandscape) 0 else {
+    val verticalOffset = if (isLandscape) {
+        0
+    } else {
         with(LocalDensity.current) {
             (playerBarExpandedOffset.floatValue * NavigationBarSize.value).dp.roundToPx()
         }
