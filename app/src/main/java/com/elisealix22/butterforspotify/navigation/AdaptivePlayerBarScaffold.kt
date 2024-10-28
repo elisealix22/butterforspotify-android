@@ -158,6 +158,23 @@ private fun unselectedItemColors(): NavigationSuiteItemColors =
 
 @ThemePreview
 @Composable
+fun BottomNavigationPreview() {
+    ButterForSpotifyTheme {
+        NavigationSuite {
+            BottomNavigationTabs.forEachIndexed { index, tab ->
+                item(
+                    icon = { BottomNavigationIcon(tab = tab) },
+                    label = { BottomNavigationText(tab = tab) },
+                    selected = index == 0,
+                    onClick = { }
+                )
+            }
+        }
+    }
+}
+
+@ThemePreview
+@Composable
 fun AdaptivePlayerBarScaffoldPortraitPreview() {
     ButterForSpotifyTheme {
         AdaptivePlayerBarScaffold(

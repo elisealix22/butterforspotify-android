@@ -1,8 +1,6 @@
 package com.elisealix22.butterforspotify.main
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,9 +12,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.elisealix22.butterforspotify.music.MusicScreen
 import com.elisealix22.butterforspotify.navigation.AdaptivePlayerBarScaffold
-import com.elisealix22.butterforspotify.navigation.BottomNavigationIcon
 import com.elisealix22.butterforspotify.navigation.BottomNavigationTabs
-import com.elisealix22.butterforspotify.navigation.BottomNavigationText
 import com.elisealix22.butterforspotify.navigation.ButterRoute
 import com.elisealix22.butterforspotify.player.MockPlayer
 import com.elisealix22.butterforspotify.player.Player
@@ -58,23 +54,6 @@ fun MainScreen(
                 Text(
                     modifier = Modifier.padding(Dimen.Padding),
                     text = "Episodes coming soon."
-                )
-            }
-        }
-    }
-}
-
-@ThemePreview
-@Composable
-fun BottomNavigationPreview() {
-    ButterForSpotifyTheme {
-        NavigationBar {
-            BottomNavigationTabs.forEachIndexed { index, tab ->
-                NavigationBarItem(
-                    icon = { BottomNavigationIcon(tab = tab) },
-                    label = { BottomNavigationText(tab = tab) },
-                    selected = index == 0,
-                    onClick = { }
                 )
             }
         }
