@@ -156,7 +156,7 @@ private fun PortraitContent(
                 top = expandedImageConfig.expandedImagePadding
                     .calculateTopPadding()
                     .plus(expandedImageConfig.expandedImageSize)
-                    .plus(padding),
+                    .plus(padding)
             )
     ) {
         TrackInfo(
