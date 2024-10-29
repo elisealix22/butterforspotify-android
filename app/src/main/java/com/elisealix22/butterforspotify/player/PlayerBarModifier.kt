@@ -71,9 +71,9 @@ fun Modifier.expandablePlayerBar(
     val minPlayerBarWidth = containerWidth.value - horizontalPadding.times(2).value
     val playerBarWidth = remember {
         derivedStateOf {
-            val expandOffset = calculateExpandOffset(playerBarHeight.value.dp, containerHeight)
+            val offset = calculateExpandOffset(playerBarHeight.value.dp, containerHeight)
             val expandableWidth = containerWidth.value - minPlayerBarWidth
-            minPlayerBarWidth + (expandOffset * expandableWidth)
+            minPlayerBarWidth + (offset * expandableWidth)
         }
     }
     val scope = rememberCoroutineScope()
