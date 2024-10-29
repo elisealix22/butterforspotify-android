@@ -18,13 +18,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
@@ -77,7 +75,6 @@ fun Modifier.expandablePlayerBar(
         }
     }
     val scope = rememberCoroutineScope()
-    val haptic = LocalHapticFeedback.current
     val animateExpand: (expandUp: Boolean) -> Unit = { expandUp ->
         scope.launch {
             if (expandUp) {
@@ -119,10 +116,7 @@ fun Modifier.expandablePlayerBar(
         .clickable(
             enabled = enabled && playerBarHeight.isCollapsed(),
             onClickLabel = stringResource(R.string.open_fullscreen_player),
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                animateExpand(true)
-            },
+            onClick = { animateExpand(true) },
             indication = null,
             interactionSource = null
         )

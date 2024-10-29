@@ -3,7 +3,8 @@ package com.elisealix22.butterforspotify.player
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,13 +23,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiState
@@ -96,60 +101,103 @@ fun ExpandedPlayerBar(
                 player.playerState.track?.name ?: ""
             )
         )
-        Column(
-            modifier = if (expandedImageConfig.isLandscape) {
-                Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Center)
-                    .padding(Dimen.Padding)
-            } else {
-                Modifier
-                    .fillMaxHeight()
-                    .align(Alignment.Center)
-                    .padding(
-                        top = expandedImageConfig.expandedImagePadding.calculateTopPadding()
-                            .plus(expandedImageConfig.expandedImageSize)
-                            .plus(Dimen.Padding),
-                        bottom = Dimen.Padding,
-                        start = Dimen.Padding,
-                        end = Dimen.Padding
-                    )
-            }
-        ) {
-            TrackInfo(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                player = player
+        if (expandedImageConfig.isLandscape) {
+            LandscapeContent(
+                player = player,
+                expandedImageConfig = expandedImageConfig
             )
-            PlayerControls(
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                player = player
+        } else {
+            PortraitContent(
+                player = player,
+                expandedImageConfig = expandedImageConfig
             )
         }
     }
 }
 
 @Composable
-private fun TrackInfo(
+private fun LandscapeContent(
     modifier: Modifier = Modifier,
-    player: Player
+    player: Player,
+    expandedImageConfig: ExpandedImageConfig
 ) {
+    val padding = Dimen.PaddingDouble
     Column(
         modifier = modifier
+            .fillMaxSize()
+            .padding(
+                top = padding,
+                start = expandedImageConfig.expandedImageSize.plus(padding),
+                end = padding
+            )
     ) {
-        Text(
-            text = player.playerState.track.name,
-            style = TextStyleAlbumTitle,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+        Spacer(Modifier.weight(1F))
+        TrackInfo(player = player)
+        PlayerControls(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(vertical = padding),
+            player = player
         )
-        val artistNames = remember(player.playerState.track.artists) {
-            player.playerState.track.artists.joinToString { it.name }
-        }
+    }
+}
+
+@Composable
+private fun PortraitContent(
+    modifier: Modifier = Modifier,
+    player: Player,
+    expandedImageConfig: ExpandedImageConfig
+) {
+    val padding = Dimen.PaddingDouble
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(
+                top = expandedImageConfig.expandedImagePadding
+                    .calculateTopPadding()
+                    .plus(expandedImageConfig.expandedImageSize)
+                    .plus(padding),
+            )
+    ) {
+        TrackInfo(
+            modifier = Modifier.padding(horizontal = padding),
+            player = player
+        )
+        Spacer(modifier = Modifier.weight(1F))
+        PlayerControls(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(start = padding, end = padding, bottom = padding),
+            player = player
+        )
+    }
+}
+
+@Composable
+private fun TrackInfo(
+    modifier: Modifier = Modifier,
+    player: Player,
+    textAlign: TextAlign = TextAlign.Center
+) {
+    val track = player.playerState.track ?: return
+    Column(modifier = modifier) {
         Text(
-            text = artistNames,
-            style = TextStyleArtistTitle,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = Dimen.PaddingHalf),
+            text = track.name,
+            style = TextStyleAlbumTitle.copy(fontSize = 24.sp, lineHeight = 32.sp),
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = textAlign
+        )
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = remember(track.artists) { track.artists.joinToString { it.name } },
+            style = TextStyleArtistTitle.copy(fontSize = 18.sp, lineHeight = 26.sp),
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = textAlign
         )
     }
 }
@@ -159,31 +207,69 @@ private fun PlayerControls(
     modifier: Modifier = Modifier,
     player: Player
 ) {
+    val iconSize = 64.dp
+    val haptic = LocalHapticFeedback.current
+    val enabled = player.spotifyApis != null
     val isPaused = player.playerState.isPaused
-    IconButton(
-        modifier = modifier.size(PlayerBarHeight),
-        onClick = {
-            if (isPaused) {
-                player.spotifyApis?.playerApi?.resume()
-            } else {
-                player.spotifyApis?.playerApi?.pause()
-            }
-        },
-        enabled = player.spotifyApis != null,
-        content = {
-            if (isPaused) {
+    Row(modifier = modifier) {
+        IconButton(
+            modifier = Modifier.padding(Dimen.Padding),
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                player.spotifyApis?.playerApi?.skipPrevious()
+            },
+            enabled = enabled,
+            content = {
                 Icon(
-                    painter = painterResource(R.drawable.ic_play_24),
-                    contentDescription = stringResource(R.string.resume)
-                )
-            } else {
-                Icon(
-                    painter = painterResource(R.drawable.ic_pause_24),
-                    contentDescription = stringResource(R.string.pause)
+                    modifier = Modifier.size(iconSize),
+                    painter = painterResource(R.drawable.ic_previous_24),
+                    contentDescription = stringResource(R.string.previous)
                 )
             }
-        }
-    )
+        )
+        IconButton(
+            modifier = Modifier.padding(Dimen.Padding),
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                if (isPaused) {
+                    player.spotifyApis?.playerApi?.resume()
+                } else {
+                    player.spotifyApis?.playerApi?.pause()
+                }
+            },
+            enabled = enabled,
+            content = {
+                if (isPaused) {
+                    Icon(
+                        modifier = Modifier.size(iconSize),
+                        painter = painterResource(R.drawable.ic_play_circle_24),
+                        contentDescription = stringResource(R.string.resume)
+                    )
+                } else {
+                    Icon(
+                        modifier = Modifier.size(iconSize),
+                        painter = painterResource(R.drawable.ic_pause_circle_24),
+                        contentDescription = stringResource(R.string.pause)
+                    )
+                }
+            }
+        )
+        IconButton(
+            modifier = Modifier.padding(Dimen.Padding),
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                player.spotifyApis?.playerApi?.skipNext()
+            },
+            enabled = enabled,
+            content = {
+                Icon(
+                    modifier = Modifier.size(iconSize),
+                    painter = painterResource(R.drawable.ic_next_24),
+                    contentDescription = stringResource(R.string.next)
+                )
+            }
+        )
+    }
 }
 
 fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageConfig {
@@ -227,7 +313,7 @@ fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageC
 fun ExpandedPlayerBarPreview() {
     val uiState = UiState.Success(MockPlayerWithLongTrackTitle)
     val containerWidth = LocalConfiguration.current.screenWidthDp.dp
-    val containerHeight = LocalConfiguration.current.screenWidthDp.dp
+    val containerHeight = LocalConfiguration.current.screenHeightDp.dp
     ButterForSpotifyTheme {
         Surface {
             ExpandedPlayerBar(
@@ -247,7 +333,7 @@ fun ExpandedPlayerBarPreview() {
 fun ExpandedPlayerBarCachedPreview() {
     val uiState = UiState.Loading(MockPlayerWithCachedState)
     val containerWidth = LocalConfiguration.current.screenWidthDp.dp
-    val containerHeight = LocalConfiguration.current.screenWidthDp.dp
+    val containerHeight = LocalConfiguration.current.screenHeightDp.dp
     ButterForSpotifyTheme {
         Surface {
             ExpandedPlayerBar(
@@ -267,7 +353,7 @@ fun ExpandedPlayerBarCachedPreview() {
 fun ExpandedPlayerBarLandscapePreview() {
     val uiState = UiState.Success(MockPlayerWithLongTrackTitle)
     val containerWidth = LocalConfiguration.current.screenWidthDp.dp
-    val containerHeight = LocalConfiguration.current.screenWidthDp.dp
+    val containerHeight = LocalConfiguration.current.screenHeightDp.dp
     ButterForSpotifyTheme {
         Surface {
             ExpandedPlayerBar(

@@ -22,6 +22,8 @@
     <string name="play_x">Play %s</string>
     <string name="resume">Resume</string>
     <string name="pause">Pause</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
     <string name="connecting_to_spotify">Connecting to Spotify…</string>
     <string name="track_art_content_description">%s art</string>
     <string name="open_fullscreen_player">Open fullscreen player</string>

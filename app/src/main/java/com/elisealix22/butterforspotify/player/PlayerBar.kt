@@ -28,7 +28,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,6 +53,7 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 val PlayerBarHeight = 64.dp
 private val PlayerBarImageSizeCollapsed = 48.dp
 private val PlayerBarRoundedCorner = 4.dp
+private val PlayerTextStartPadding = 12.dp
 
 @Composable
 fun PlayerBar(
@@ -72,8 +75,11 @@ fun PlayerBar(
     val expandedImageConfig = remember(containerWidth, containerHeight) {
         expandedImageConfig(containerWidth, containerHeight)
     }
+    val isValidTrack = playerUiState.data?.playerState?.track != null
     LaunchedEffect(playerUiState) {
-        if (expandState.value == PlayerBarExpandState.Expanded && playerUiState.isError()) {
+        if (expandState.value == PlayerBarExpandState.Expanded &&
+            (playerUiState.isError() || !isValidTrack)
+        ) {
             expandState.value = PlayerBarExpandState.Collapsed
         }
     }
@@ -83,7 +89,7 @@ fun PlayerBar(
                 containerWidth = containerWidth,
                 containerHeight = containerHeight,
                 horizontalPadding = horizontalPadding,
-                enabled = playerUiState is UiState.Success,
+                enabled = playerUiState is UiState.Success && isValidTrack,
                 expandState = expandState
             ) { offset ->
                 expandOffset.floatValue = offset
@@ -173,13 +179,13 @@ private fun CollapsedPlayerContent(
                         y = (offsetY * expandOffset).roundToPx()
                     )
                 },
-            imageUri = player.playerState.track.imageUri,
+            imageUri = player.playerState.track?.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
-            imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
+            imageDimension = com.spotify.protocol.types.Image.Dimension.SMALL,
             size = PlayerBarImageSizeCollapsed,
             contentDescription = stringResource(
                 R.string.track_art_content_description,
-                player.playerState.track.name
+                player.playerState.track?.name ?: ""
             )
         )
         if (rowAlpha > 0F) {
@@ -191,7 +197,8 @@ private fun CollapsedPlayerContent(
                     .alpha(rowAlpha)
                     .padding(
                         start = PlayerBarImageSizeCollapsed
-                            .plus(collapsedImagePadding.times(2))
+                            .plus(collapsedImagePadding)
+                            .plus(PlayerTextStartPadding)
                     )
             ) {
                 TrackInfo(
@@ -239,7 +246,7 @@ private fun CollapsedLoadingContent(
                 Text(
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
-                        .padding(horizontal = Dimen.PaddingHalf),
+                        .padding(horizontal = PlayerTextStartPadding),
                     text = stringResource(R.string.connecting_to_spotify),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -285,7 +292,7 @@ private fun CollapsedErrorContent(
         Text(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
-                .padding(horizontal = Dimen.PaddingHalf),
+                .padding(horizontal = PlayerTextStartPadding),
             text = uiErrorMessage?.text() ?: stringResource(R.string.ui_state_error),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
@@ -299,9 +306,11 @@ private fun PlayButton(
     player: Player
 ) {
     val isPaused = player.playerState.isPaused
+    val haptic = LocalHapticFeedback.current
     IconButton(
         modifier = modifier.size(PlayerBarHeight),
         onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             if (isPaused) {
                 player.spotifyApis?.playerApi?.resume()
             } else {
@@ -330,20 +339,18 @@ private fun TrackInfo(
     modifier: Modifier = Modifier,
     player: Player
 ) {
+    val track = player.playerState.track ?: return
     Column(
         modifier = modifier
     ) {
         Text(
-            text = player.playerState.track.name,
+            text = track.name,
             style = TextStyleAlbumTitle,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        val artistNames = remember(player.playerState.track.artists) {
-            player.playerState.track.artists.joinToString { it.name }
-        }
         Text(
-            text = artistNames,
+            text = remember(track.artists) { track.artists.joinToString { it.name } },
             style = TextStyleArtistTitle,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
