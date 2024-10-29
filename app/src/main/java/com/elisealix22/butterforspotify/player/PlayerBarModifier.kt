@@ -1,6 +1,5 @@
 package com.elisealix22.butterforspotify.player
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
@@ -10,6 +9,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
 import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -48,6 +49,13 @@ enum class PlayerBarExpandState {
     Collapsed
 }
 
+@Serializable
+data class PlayerBarState(
+    val expandState: PlayerBarExpandState,
+    val expandOffset: Float
+)
+
+// TODO: ELISE COMBINE STATE AND OFFSET!
 @Composable
 fun Modifier.expandablePlayerBar(
     containerWidth: Dp,

@@ -1,8 +1,8 @@
 package com.elisealix22.butterforspotify.player
 
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,16 +13,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,14 +33,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.min
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiMessage
@@ -54,6 +58,7 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 import com.spotify.protocol.types.Image
 
 val PlayerBarHeight = 64.dp
+private val TopAppBarHeight = 64.dp
 private val PlayerBarImageSizeCollapsed = 48.dp
 private val PlayerBarRoundedCorner = 4.dp
 
@@ -65,7 +70,7 @@ private data class SurfaceConfig(
 private data class ExpandedImageConfig(
     val isLandscape: Boolean,
     val expandedImageSize: Dp,
-    val expandedImagePadding: Dp,
+    val expandedImagePadding: PaddingValues,
     val expandedImageX: Dp,
     val expandedImageY: Dp
 )
@@ -91,28 +96,7 @@ fun PlayerBar(
         }
     }
     val expandedImageConfig = remember(containerWidth, containerHeight) {
-        val isLandscape = containerWidth > containerHeight
-        val expandedImagePadding = Dimen.Padding
-        val expandedImageSize = min(containerWidth, containerHeight).minus(
-            expandedImagePadding.times(2)
-        )
-        ExpandedImageConfig(
-            isLandscape = isLandscape,
-            expandedImagePadding = expandedImagePadding,
-            expandedImageSize = min(containerWidth, containerHeight).minus(
-                expandedImagePadding.times(2)
-            ),
-            expandedImageX = if (isLandscape) {
-                0.dp
-            } else {
-                containerWidth.div(2)
-                    .minus(expandedImageSize.div(2))
-                    .minus(expandedImagePadding)
-            },
-            expandedImageY = containerHeight.times(-1)
-                .plus(expandedImagePadding)
-                .plus(expandedImageSize)
-        )
+        expandedImageConfig(containerWidth, containerHeight)
     }
     LaunchedEffect(playerUiState) {
         if (expandState.value == PlayerBarExpandState.Expanded && playerUiState.isError()) {
@@ -141,15 +125,17 @@ fun PlayerBar(
                 expandedImageConfig = expandedImageConfig,
                 expandOffset = expandOffset.floatValue
             )
-            ExpandedPlayerBar(
-                modifier = Modifier.align(Alignment.TopStart),
-                playerUiState = playerUiState,
-                expandedImageConfig = expandedImageConfig,
-                expandOffset = expandOffset.floatValue,
-                onCloseClick = {
-                    expandState.value = PlayerBarExpandState.Collapsed
-                }
-            )
+            if (expandOffset.floatValue > 0F) {
+                ExpandedPlayerBar(
+                    modifier = Modifier.align(Alignment.TopStart),
+                    playerUiState = playerUiState,
+                    expandedImageConfig = expandedImageConfig,
+                    expandOffset = expandOffset.floatValue,
+                    onCloseClick = {
+                        expandState.value = PlayerBarExpandState.Collapsed
+                    }
+                )
+            }
         }
     }
 }
@@ -186,6 +172,7 @@ private fun CollapsedPlayerBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpandedPlayerBar(
     modifier: Modifier = Modifier,
@@ -198,28 +185,30 @@ private fun ExpandedPlayerBar(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(expandedImageConfig.expandedImagePadding)
             .alpha(expandOffset)
     ) {
-        IconButton(
-            modifier = Modifier
-                .align(Alignment.TopEnd),
-            onClick = onCloseClick
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_x_24),
-                contentDescription = stringResource(R.string.close_fullscreen_player)
-            )
-        }
+        TopAppBar(
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.Transparent,
+                navigationIconContentColor = MaterialTheme.colorScheme.primary
+            ),
+            expandedHeight = TopAppBarHeight,
+            navigationIcon = {
+                IconButton(onClick = onCloseClick) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_x_24),
+                        contentDescription = stringResource(R.string.close_fullscreen_player)
+                    )
+                }
+            },
+            title = {}
+        )
         AsyncAlbumImage(
             modifier = Modifier
                 .alpha(if (expandOffset == 1F) 1F else 0F)
-                .size(expandedImageConfig.expandedImageSize)
-                .padding(top = if (expandedImageConfig.isLandscape) {
-                    0.dp
-                } else {
-                    48.dp
-                }),
+                .align(Alignment.TopStart)
+                .padding(expandedImageConfig.expandedImagePadding)
+                .size(expandedImageConfig.expandedImageSize),
             imageUri = player.playerState.track?.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
             imageDimension = Image.Dimension.LARGE,
@@ -233,13 +222,20 @@ private fun ExpandedPlayerBar(
             modifier = if (expandedImageConfig.isLandscape) {
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = expandedImageConfig.expandedImageSize)
                     .align(Alignment.Center)
+                    .padding(Dimen.Padding)
             } else {
                 Modifier
                     .fillMaxHeight()
-                    .padding(top = expandedImageConfig.expandedImageSize)
                     .align(Alignment.Center)
+                    .padding(
+                        top = expandedImageConfig.expandedImagePadding.calculateTopPadding()
+                            .plus(expandedImageConfig.expandedImageSize)
+                            .plus(Dimen.Padding),
+                        bottom = Dimen.Padding,
+                        start = Dimen.Padding,
+                        end = Dimen.Padding
+                    )
             }
         ) {
             PlayButton(
@@ -295,6 +291,7 @@ private fun CollapsedPlayerContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(PlayerBarHeight)
+                    .align(Alignment.BottomStart)
                     .alpha(rowAlpha)
                     .padding(
                         start = PlayerBarImageSizeCollapsed
@@ -407,7 +404,7 @@ private fun PlayButton(
 ) {
     val isPaused = player.playerState.isPaused
     IconButton(
-        modifier = modifier,
+        modifier = modifier.size(PlayerBarHeight),
         onClick = {
             if (isPaused) {
                 player.spotifyApis?.playerApi?.resume()
@@ -456,6 +453,42 @@ private fun TrackInfo(
             overflow = TextOverflow.Ellipsis
         )
     }
+}
+
+private fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageConfig {
+    val isLandscape = containerWidth > containerHeight
+    val expandedImagePadding = PaddingValues(
+        start = Dimen.Padding,
+        end = Dimen.Padding,
+        bottom = Dimen.Padding,
+        top = TopAppBarHeight
+    )
+    val expandedImageSize = if (isLandscape) {
+        containerHeight.minus(
+            expandedImagePadding.calculateTopPadding()
+                .plus(expandedImagePadding.calculateBottomPadding())
+        )
+    } else {
+        containerWidth.minus(
+            expandedImagePadding.calculateLeftPadding(LayoutDirection.Ltr)
+                .plus(expandedImagePadding.calculateRightPadding(LayoutDirection.Ltr))
+        )
+    }
+    return ExpandedImageConfig(
+        isLandscape = isLandscape,
+        expandedImagePadding = expandedImagePadding,
+        expandedImageSize = expandedImageSize,
+        expandedImageX = if (isLandscape) {
+            0.dp
+        } else {
+            containerWidth.div(2)
+                .minus(expandedImageSize.div(2))
+                .minus(expandedImagePadding.calculateLeftPadding(LayoutDirection.Ltr))
+        },
+        expandedImageY = containerHeight.times(-1)
+            .plus(expandedImagePadding.calculateTopPadding())
+            .plus(expandedImageSize)
+    )
 }
 
 @ThemePreview
@@ -523,27 +556,15 @@ fun ExpandedPlayerBarPreview() {
     val uiState = UiState.Success(MockPlayerWithLongTrackTitle)
     val containerWidth = LocalConfiguration.current.screenWidthDp.dp
     val containerHeight = LocalConfiguration.current.screenWidthDp.dp
-    val expandedImagePadding = Dimen.Padding
-    val expandedImageSize = min(containerWidth, containerHeight).minus(
-        expandedImagePadding.times(2)
-    )
-    val expandedImageConfig = ExpandedImageConfig(
-        isLandscape = false,
-        expandedImagePadding = expandedImagePadding,
-        expandedImageSize = containerWidth.minus(expandedImagePadding.times(2)),
-        expandedImageX = containerWidth.div(2)
-            .minus(expandedImageSize.div(2))
-            .minus(expandedImagePadding),
-        expandedImageY = containerHeight.times(-1)
-            .plus(expandedImagePadding)
-            .plus(expandedImageSize)
-    )
     ButterForSpotifyTheme {
         Surface {
             ExpandedPlayerBar(
                 playerUiState = uiState,
                 expandOffset = 1F,
-                expandedImageConfig = expandedImageConfig
+                expandedImageConfig = expandedImageConfig(
+                    containerWidth = containerWidth,
+                    containerHeight = containerHeight
+                )
             )
         }
     }
@@ -555,27 +576,15 @@ fun ExpandedPlayerBarCachedPreview() {
     val uiState = UiState.Loading(MockPlayerWithCachedState)
     val containerWidth = LocalConfiguration.current.screenWidthDp.dp
     val containerHeight = LocalConfiguration.current.screenWidthDp.dp
-    val expandedImagePadding = Dimen.Padding
-    val expandedImageSize = min(containerWidth, containerHeight).minus(
-        expandedImagePadding.times(2)
-    )
-    val expandedImageConfig = ExpandedImageConfig(
-        isLandscape = false,
-        expandedImagePadding = expandedImagePadding,
-        expandedImageSize = containerWidth.minus(expandedImagePadding.times(2)),
-        expandedImageX = containerWidth.div(2)
-            .minus(expandedImageSize.div(2))
-            .minus(expandedImagePadding),
-        expandedImageY = containerHeight.times(-1)
-            .plus(expandedImagePadding)
-            .plus(expandedImageSize)
-    )
     ButterForSpotifyTheme {
         Surface {
             ExpandedPlayerBar(
                 playerUiState = uiState,
                 expandOffset = 1F,
-                expandedImageConfig = expandedImageConfig
+                expandedImageConfig = expandedImageConfig(
+                    containerWidth = containerWidth,
+                    containerHeight = containerHeight
+                )
             )
         }
     }
@@ -587,25 +596,15 @@ fun ExpandedPlayerBarLandscapePreview() {
     val uiState = UiState.Success(MockPlayerWithLongTrackTitle)
     val containerWidth = LocalConfiguration.current.screenWidthDp.dp
     val containerHeight = LocalConfiguration.current.screenWidthDp.dp
-    val expandedImagePadding = Dimen.Padding
-    val expandedImageSize = min(containerWidth, containerHeight).minus(
-        expandedImagePadding.times(2)
-    )
-    val expandedImageConfig = ExpandedImageConfig(
-        isLandscape = true,
-        expandedImagePadding = expandedImagePadding,
-        expandedImageSize = containerHeight.minus(expandedImagePadding.times(2)),
-        expandedImageX = 0.dp,
-        expandedImageY = containerHeight.times(-1)
-            .plus(expandedImagePadding)
-            .plus(expandedImageSize)
-    )
     ButterForSpotifyTheme {
         Surface {
             ExpandedPlayerBar(
                 playerUiState = uiState,
                 expandOffset = 1F,
-                expandedImageConfig = expandedImageConfig
+                expandedImageConfig = expandedImageConfig(
+                    containerWidth = containerWidth,
+                    containerHeight = containerHeight
+                )
             )
         }
     }
