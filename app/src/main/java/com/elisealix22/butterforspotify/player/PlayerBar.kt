@@ -72,13 +72,16 @@ fun PlayerBar(
             RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp)
         }
     }
+    val enabled by remember(playerUiState) {
+        val isValidTrack = playerUiState.data?.playerState?.track != null
+        mutableStateOf(playerUiState is UiState.Success && isValidTrack)
+    }
     val expandedImageConfig = remember(containerWidth, containerHeight) {
         expandedImageConfig(containerWidth, containerHeight)
     }
-    val isValidTrack = playerUiState.data?.playerState?.track != null
     LaunchedEffect(playerUiState) {
         if (expandState.value == PlayerBarExpandState.Expanded &&
-            (playerUiState.isError() || !isValidTrack)
+            (playerUiState.isError() || !enabled)
         ) {
             expandState.value = PlayerBarExpandState.Collapsed
         }
@@ -89,7 +92,7 @@ fun PlayerBar(
                 containerWidth = containerWidth,
                 containerHeight = containerHeight,
                 horizontalPadding = horizontalPadding,
-                enabled = playerUiState is UiState.Success && isValidTrack,
+                enabled = enabled,
                 expandState = expandState
             ) { offset ->
                 expandOffset.floatValue = offset
