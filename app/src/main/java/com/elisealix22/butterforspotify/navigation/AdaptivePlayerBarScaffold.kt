@@ -58,14 +58,14 @@ fun AdaptivePlayerBarScaffold(
     } else {
         NavigationSuiteType.NavigationBar
     }
-    val playerBarExpandedOffset = remember { mutableFloatStateOf(0F) }
+    val playerBarExpandOffset = remember { mutableFloatStateOf(0F) }
     val selectedItemColors = selectedItemColors()
     val unselectedItemColors = unselectedItemColors()
     val verticalOffset = if (isLandscape) {
         0
     } else {
         with(LocalDensity.current) {
-            (playerBarExpandedOffset.floatValue * NavigationBarSize.value).dp.roundToPx()
+            (playerBarExpandOffset.floatValue * NavigationBarSize.value).dp.roundToPx()
         }
     }
     Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
@@ -90,7 +90,7 @@ fun AdaptivePlayerBarScaffold(
                                 } else {
                                     unselectedItemColors
                                 },
-                                enabled = playerBarExpandedOffset.floatValue == 0F
+                                enabled = playerBarExpandOffset.floatValue == 0F
                             )
                         }
                     }
@@ -112,7 +112,7 @@ fun AdaptivePlayerBarScaffold(
                         Dimen.PaddingOneAndAHalf
                     },
                     onExpandChange = { offset ->
-                        playerBarExpandedOffset.floatValue = offset
+                        playerBarExpandOffset.floatValue = offset
                     }
                 )
             }
