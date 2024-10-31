@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.material3.adaptive.nav)
     implementation(libs.androidx.navigation)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.androidx.palette)
 
     // External libraries
     implementation(files("spotify-app-remote-release-0.8.0.aar"))

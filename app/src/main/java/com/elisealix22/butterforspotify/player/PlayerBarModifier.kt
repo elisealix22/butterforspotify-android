@@ -1,5 +1,6 @@
 package com.elisealix22.butterforspotify.player
 
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
@@ -9,11 +10,18 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
 import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -27,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import com.elisealix22.butterforspotify.R
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
@@ -47,6 +56,7 @@ enum class PlayerBarExpandState {
 
 @Composable
 fun Modifier.expandablePlayerBar(
+    collapsedHeight: Dp,
     containerWidth: Dp,
     containerHeight: Dp,
     horizontalPadding: Dp,
@@ -55,25 +65,19 @@ fun Modifier.expandablePlayerBar(
         remember { mutableStateOf(PlayerBarExpandState.Collapsed) },
     onExpandChange: (offset: Float) -> Unit = {}
 ): Modifier {
-    val playerBarHeight = remember {
+    val playerBarHeight = remember(collapsedHeight, containerHeight) {
         Animatable(
             if (expandState.value == PlayerBarExpandState.Expanded) {
                 containerHeight.value
             } else {
-                PlayerBarHeight.value
+                collapsedHeight.value
             }
         ).apply {
-            updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
+            updateBounds(lowerBound = collapsedHeight.value, upperBound = containerHeight.value)
         }
     }
-    val minPlayerBarWidth = containerWidth.value - horizontalPadding.times(2).value
-    val playerBarWidth = remember {
-        derivedStateOf {
-            val offset = calculateExpandOffset(playerBarHeight.value.dp, containerHeight)
-            val expandableWidth = containerWidth.value - minPlayerBarWidth
-            minPlayerBarWidth + (offset * expandableWidth)
-        }
-    }
+//    val playerBarWidth = remember(playerBarHeight) {
+//    }
     val scope = rememberCoroutineScope()
     val animateExpand: (expandUp: Boolean) -> Unit = { expandUp ->
         scope.launch {
@@ -102,16 +106,34 @@ fun Modifier.expandablePlayerBar(
             }
         }
     }
+
+    val offset = playerBarHeight.calculateExpandOffset(containerHeight)
+            Log.e("###", "Size changed: ${offset}")
+    val minPlayerBarWidth = containerWidth.value - horizontalPadding.times(2).value
+    val expandableWidth = containerWidth.value - minPlayerBarWidth
+    val width: Float = minPlayerBarWidth + (offset * expandableWidth)
+
+//    onExpandChange(offset)
+//    expandState.value = if (offset == 1F) {
+//        PlayerBarExpandState.Expanded
+//    } else {
+//        PlayerBarExpandState.Collapsed
+//    }
+
     return this
-        .size(width = playerBarWidth.value.dp, height = playerBarHeight.value.dp)
+        .size(
+            width = (minPlayerBarWidth + (offset * expandableWidth)).dp,
+            height = playerBarHeight.value.dp
+        )
         .onSizeChanged {
-            val expandOffset = calculateExpandOffset(playerBarHeight.value.dp, containerHeight)
-            expandState.value = if (expandOffset == 1F) {
+//            val expandOffset = playerBarHeight.calculateExpandOffset(containerHeight)
+//            Log.e("###", "Size changed: ${expandOffset}")
+            expandState.value = if (offset == 1F) {
                 PlayerBarExpandState.Expanded
             } else {
                 PlayerBarExpandState.Collapsed
             }
-            onExpandChange(expandOffset)
+            onExpandChange(offset)
         }
         .clickable(
             enabled = enabled && playerBarHeight.isCollapsed(),
@@ -170,10 +192,12 @@ fun Modifier.expandablePlayerBar(
 /**
  * @return Value between 0F and 1F where 0F is collapsed and 1F is expanded.
  */
-private fun calculateExpandOffset(playerBarHeight: Dp, containerHeight: Dp): Float {
-    val availableHeight = containerHeight.value - PlayerBarHeight.value
-    val traveledHeight = playerBarHeight.value - PlayerBarHeight.value
-    return traveledHeight.roundToInt() / availableHeight
+private fun Animatable<Float, AnimationVector1D>.calculateExpandOffset(containerHeight: Dp): Float {
+    val collapsedHeight: Dp = lowerBound?.dp ?: return 0F
+    val availableHeight: Dp = containerHeight - collapsedHeight
+    val traveledHeight = value.dp - collapsedHeight
+    Log.e("###", "OFFSET: ${traveledHeight.div(availableHeight)}")
+    return traveledHeight.div(availableHeight)
 }
 
 private fun Animatable<Float, AnimationVector1D>.isExpanded(): Boolean {

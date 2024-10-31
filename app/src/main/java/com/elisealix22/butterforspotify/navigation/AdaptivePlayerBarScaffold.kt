@@ -1,20 +1,40 @@
 package com.elisealix22.butterforspotify.navigation
 
 import android.annotation.SuppressLint
+import android.util.Log
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowSize
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuite
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteColors
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItemColors
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableFloatStateOf
@@ -24,7 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import com.elisealix22.butterforspotify.player.MockPlayer
@@ -35,8 +59,6 @@ import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.LandscapeThemePreview
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
-
-private val NavigationBarSize = 80.dp
 
 @Composable
 fun AdaptivePlayerBarScaffold(
@@ -50,8 +72,13 @@ fun AdaptivePlayerBarScaffold(
     content: @Composable () -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
-    val containerHeight = configuration.screenHeightDp.dp
-    val containerWidth = configuration.screenWidthDp.dp
+//    val containerWidth = with(LocalDensity.current) {
+//        currentWindowSize().width.toDp().let {
+//            it - (it - configuration.screenWidthDp.dp) +
+//        }
+//    }
+    val containerWidth = LocalConfiguration.current.screenWidthDp.dp
+    val containerHeight = with(LocalDensity.current) { currentWindowSize().height.toDp() }
     val isLandscape = containerWidth > containerHeight
     val layoutType = if (isLandscape) {
         NavigationSuiteType.NavigationRail
@@ -61,20 +88,19 @@ fun AdaptivePlayerBarScaffold(
     val playerBarExpandOffset = remember { mutableFloatStateOf(0F) }
     val selectedItemColors = selectedItemColors()
     val unselectedItemColors = unselectedItemColors()
+    val navigationBarSize = navigationBarSize(isLandscape)
     val verticalOffset = if (isLandscape) {
-        0
+        0F
     } else {
-        with(LocalDensity.current) {
-            (playerBarExpandOffset.floatValue * NavigationBarSize.value).dp.roundToPx()
-        }
+        playerBarExpandOffset.floatValue * navigationBarSize.value
     }
     Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
         AdaptivePlayerBarLayout(
             navigationSuite = {
                 NavigationSuite(
                     modifier = Modifier
-                        .fixNavigationSize(isLandscape)
-                        .offset { IntOffset(0, verticalOffset) },
+                        .fixNavigationSize(isLandscape, navigationBarSize)
+                        .offset { IntOffset(0, verticalOffset.dp.roundToPx()) },
                     layoutType = layoutType,
                     colors = navigationSuiteColors,
                     content = {
@@ -102,12 +128,13 @@ fun AdaptivePlayerBarScaffold(
                 PlayerBar(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .offset { IntOffset(0, verticalOffset) },
+                        .offset { IntOffset(0, verticalOffset.dp.roundToPx()) },
                     playerUiState = playerUiState,
-                    containerHeight = containerHeight,
                     containerWidth = containerWidth,
+                    containerHeight = containerHeight,
+                    bottomPadding = playerBarBottomPadding(isLandscape),
                     horizontalPadding = if (isLandscape) {
-                        NavigationBarSize.plus(Dimen.PaddingOneAndAHalf)
+                        navigationBarSize.plus(Dimen.PaddingOneAndAHalf)
                     } else {
                         Dimen.PaddingOneAndAHalf
                     },
@@ -120,12 +147,28 @@ fun AdaptivePlayerBarScaffold(
     }
 }
 
-private fun Modifier.fixNavigationSize(isLandscape: Boolean): Modifier {
+@Composable
+private fun playerBarBottomPadding(isLandscape: Boolean): Dp {
     return if (isLandscape) {
-        width(NavigationBarSize)
+        WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     } else {
-        height(NavigationBarSize)
+        0.dp
     }
+}
+
+@Composable
+private fun navigationBarSize(isLandscape: Boolean): Dp {
+    val navBarSize = 80.dp
+    return if (isLandscape) {
+        navBarSize
+    } else {
+        navBarSize.plus(WindowInsets.systemBars.asPaddingValues().calculateBottomPadding())
+    }
+}
+
+@Composable
+private fun Modifier.fixNavigationSize(isLandscape: Boolean, navigationBarSize: Dp): Modifier {
+    return if (isLandscape) width(navigationBarSize) else height(navigationBarSize)
 }
 
 @Composable

@@ -1,14 +1,19 @@
 package com.elisealix22.butterforspotify.main
 
+import android.app.ActionBar.LayoutParams
 import android.app.ActivityOptions
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -43,6 +48,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        enableEdgeToEdge()
 
         setContent {
             ButterForSpotifyTheme {

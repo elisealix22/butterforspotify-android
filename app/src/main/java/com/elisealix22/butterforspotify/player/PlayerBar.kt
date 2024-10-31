@@ -1,13 +1,24 @@
 package com.elisealix22.butterforspotify.player
 
+import android.util.Log
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -15,10 +26,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -28,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -36,8 +50,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import com.elisealix22.butterforspotify.R
+import com.elisealix22.butterforspotify.colorOrFallback
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
@@ -50,7 +67,7 @@ import com.elisealix22.butterforspotify.ui.theme.TextStyleArtistTitle
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
-val PlayerBarHeight = 64.dp
+private val PlayerBarHeight = 64.dp
 private val PlayerBarImageSizeCollapsed = 48.dp
 private val PlayerBarRoundedCorner = 4.dp
 private val PlayerTextStartPadding = 12.dp
@@ -62,26 +79,27 @@ fun PlayerBar(
     containerWidth: Dp = LocalConfiguration.current.screenWidthDp.dp,
     containerHeight: Dp = LocalConfiguration.current.screenHeightDp.dp,
     horizontalPadding: Dp = Dimen.PaddingOneAndAHalf,
+    bottomPadding: Dp = 0.dp,
     onExpandChange: (offset: Float) -> Unit = {}
 ) {
     val expandState = rememberSaveable { mutableStateOf(PlayerBarExpandState.Collapsed) }
     val expandOffset = remember { mutableFloatStateOf(0F) }
-    val shape by remember {
-        derivedStateOf {
-            val corner = (1F - expandOffset.floatValue) * PlayerBarRoundedCorner.value
-            RoundedCornerShape(topStart = corner.dp, topEnd = corner.dp)
-        }
-    }
-    val enabled by remember(playerUiState) {
-        val isValidTrack = playerUiState.data?.playerState?.track != null
-        mutableStateOf(playerUiState is UiState.Success && isValidTrack)
+    val isTrackValid by remember(playerUiState) {
+        mutableStateOf(playerUiState.data?.playerState?.track != null)
     }
     val expandedImageConfig = remember(containerWidth, containerHeight) {
         expandedImageConfig(containerWidth, containerHeight)
     }
+    val defaultSurfaceColor = MaterialTheme.colorScheme.surface
+    val paletteColor = remember { mutableStateOf(defaultSurfaceColor) }
+    val collapsedHeight = PlayerBarHeight.plus(bottomPadding)
+    val collapsedImagePadding = PlayerBarHeight.minus(PlayerBarImageSizeCollapsed).div(2).let {
+        PaddingValues(start = it, top = it, end = it, bottom = it.plus(bottomPadding))
+    }
+
     LaunchedEffect(playerUiState) {
         if (expandState.value == PlayerBarExpandState.Expanded &&
-            (playerUiState.isError() || !enabled)
+            (playerUiState.isError() || !isTrackValid)
         ) {
             expandState.value = PlayerBarExpandState.Collapsed
         }
@@ -89,28 +107,39 @@ fun PlayerBar(
     Surface(
         modifier = modifier
             .expandablePlayerBar(
+                collapsedHeight = collapsedHeight,
                 containerWidth = containerWidth,
                 containerHeight = containerHeight,
                 horizontalPadding = horizontalPadding,
-                enabled = enabled,
+                enabled = isTrackValid,
                 expandState = expandState
             ) { offset ->
                 expandOffset.floatValue = offset
                 onExpandChange(offset)
             },
-        shape = shape,
-        shadowElevation = if (expandState.value == PlayerBarExpandState.Expanded) 0.dp else 8.dp
+        color = if (isTrackValid) paletteColor.value else defaultSurfaceColor,
+        shape = PlayerBarRoundedCorner.value.times(1F.minus(expandOffset.floatValue)).let { dp ->
+            RoundedCornerShape(topStart = dp, topEnd = dp)
+        },
+        shadowElevation = 8.dp
     ) {
         Box {
             CollapsedPlayerBar(
-                modifier = Modifier.align(Alignment.BottomStart),
+                modifier = Modifier
+                    .heightIn(min = collapsedHeight)
+                    .align(Alignment.BottomStart),
                 playerUiState = playerUiState,
+                collapsedImagePadding = collapsedImagePadding,
                 expandedImageConfig = expandedImageConfig,
-                expandOffset = expandOffset.floatValue
+                expandOffset = expandOffset.floatValue,
+                paletteColor = paletteColor
             )
             if (expandOffset.floatValue > 0F) {
                 ExpandedPlayerBar(
-                    modifier = Modifier.align(Alignment.TopStart),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeContentPadding()
+                        .align(Alignment.TopStart),
                     playerUiState = playerUiState,
                     expandedImageConfig = expandedImageConfig,
                     expandOffset = expandOffset.floatValue,
@@ -128,23 +157,26 @@ private fun CollapsedPlayerBar(
     modifier: Modifier = Modifier,
     playerUiState: UiState<Player>,
     expandedImageConfig: ExpandedImageConfig,
-    expandOffset: Float
+    expandOffset: Float,
+    paletteColor: MutableState<Color>,
+    collapsedImagePadding: PaddingValues
 ) {
-    val collapsedImagePadding = PlayerBarHeight.minus(PlayerBarImageSizeCollapsed).div(2)
     Box(modifier = modifier) {
         when (playerUiState) {
             is UiState.Success -> CollapsedPlayerContent(
                 player = playerUiState.data,
                 expandOffset = expandOffset,
                 collapsedImagePadding = collapsedImagePadding,
-                expandedImageConfig = expandedImageConfig
+                expandedImageConfig = expandedImageConfig,
+                paletteColor = paletteColor
             )
             is UiState.Loading,
             is UiState.Initial -> CollapsedLoadingContent(
                 player = playerUiState.data,
                 expandOffset = expandOffset,
                 collapsedImagePadding = collapsedImagePadding,
-                expandedImageConfig = expandedImageConfig
+                expandedImageConfig = expandedImageConfig,
+                paletteColor = paletteColor
             )
             is UiState.Error -> CollapsedErrorContent(
                 uiErrorMessage = playerUiState.message,
@@ -161,8 +193,10 @@ private fun CollapsedPlayerContent(
     player: Player,
     expandOffset: Float,
     expandedImageConfig: ExpandedImageConfig,
-    collapsedImagePadding: Dp
+    collapsedImagePadding: PaddingValues,
+    paletteColor: MutableState<Color>
 ) {
+    val isDarkTheme = isSystemInDarkTheme()
     Box(modifier = modifier) {
         val rowAlpha = 1F - (expandOffset / .05F).coerceIn(0F, 1F)
         val imageSize = PlayerBarImageSizeCollapsed.plus(
@@ -175,8 +209,10 @@ private fun CollapsedPlayerContent(
                 .padding(collapsedImagePadding)
                 .size(imageSize)
                 .offset {
-                    val offsetX = expandedImageConfig.expandedImageX.plus(collapsedImagePadding)
-                    val offsetY = expandedImageConfig.expandedImageY.plus(collapsedImagePadding)
+                    val offsetX = expandedImageConfig.expandedImageX
+                        .plus(collapsedImagePadding.calculateLeftPadding(LayoutDirection.Ltr))
+                    val offsetY = expandedImageConfig.expandedImageY
+                        .plus(collapsedImagePadding.calculateBottomPadding())
                     IntOffset(
                         x = (offsetX * expandOffset).roundToPx(),
                         y = (offsetY * expandOffset).roundToPx()
@@ -184,23 +220,27 @@ private fun CollapsedPlayerContent(
                 },
             imageUri = player.playerState.track?.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
-            imageDimension = com.spotify.protocol.types.Image.Dimension.SMALL,
+            imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
             size = PlayerBarImageSizeCollapsed,
             contentDescription = stringResource(
                 R.string.track_art_content_description,
                 player.playerState.track?.name ?: ""
-            )
+            ),
+            onPaletteLoaded = { palette ->
+                paletteColor.value = palette.colorOrFallback(isDarkTheme)
+            }
         )
         if (rowAlpha > 0F) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(PlayerBarHeight)
                     .align(Alignment.BottomStart)
                     .alpha(rowAlpha)
                     .padding(
+                        top = collapsedImagePadding.calculateTopPadding(),
+                        bottom = collapsedImagePadding.calculateBottomPadding(),
                         start = PlayerBarImageSizeCollapsed
-                            .plus(collapsedImagePadding)
+                            .plus(collapsedImagePadding.calculateStartPadding(LayoutDirection.Ltr))
                             .plus(PlayerTextStartPadding)
                     )
             ) {
@@ -222,10 +262,11 @@ private fun CollapsedPlayerContent(
 @Composable
 private fun CollapsedLoadingContent(
     modifier: Modifier = Modifier,
-    collapsedImagePadding: Dp,
+    collapsedImagePadding: PaddingValues,
     expandedImageConfig: ExpandedImageConfig,
     expandOffset: Float,
-    player: Player?
+    player: Player?,
+    paletteColor: MutableState<Color>
 ) {
     player.let {
         if (it == null) {
@@ -260,7 +301,8 @@ private fun CollapsedLoadingContent(
                 player = it,
                 expandOffset = expandOffset,
                 expandedImageConfig = expandedImageConfig,
-                collapsedImagePadding = collapsedImagePadding
+                collapsedImagePadding = collapsedImagePadding,
+                paletteColor = paletteColor
             )
         }
     }
@@ -269,7 +311,7 @@ private fun CollapsedLoadingContent(
 @Composable
 private fun CollapsedErrorContent(
     modifier: Modifier = Modifier,
-    collapsedImagePadding: Dp,
+    collapsedImagePadding: PaddingValues,
     uiErrorMessage: UiMessage?,
     onTryAgain: (() -> Unit)?
 ) {
@@ -360,6 +402,9 @@ private fun TrackInfo(
         )
     }
 }
+
+@Composable
+fun PlayerBarSpacer() = Spacer(modifier = Modifier.height(PlayerBarHeight))
 
 @ThemePreview
 @Composable

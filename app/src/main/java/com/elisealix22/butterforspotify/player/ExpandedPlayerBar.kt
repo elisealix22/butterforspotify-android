@@ -66,9 +66,7 @@ fun ExpandedPlayerBar(
 ) {
     val player = playerUiState.data ?: return
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .alpha(expandOffset)
+        modifier = modifier.alpha(expandOffset)
     ) {
         TopAppBar(
             colors = TopAppBarDefaults.topAppBarColors(
