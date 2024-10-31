@@ -98,11 +98,12 @@ fun Modifier.expandablePlayerBar(
         }
     }
 
-    LaunchedEffect(playerBarSize.value) {
+    remember(playerBarSize.value) {
         val newExpandOffset = playerBarSize.calculateExpandOffset(containerHeight)
         if (newExpandOffset != expandOffset) {
             onExpandOffsetChange(newExpandOffset)
         }
+        newExpandOffset
     }
 
     return this
@@ -136,7 +137,7 @@ fun Modifier.expandablePlayerBar(
                             velocityTracker.addPointerInputChange(change)
                             isMovingUp = change.previousPosition.y > change.position.y
                             isDragging = change.previousPosition.y != change.position.y
-                            val changeDp = change.positionChange().y.toDp() //.value
+                            val changeDp = change.positionChange().y.toDp()
                             val targetHeight = playerBarSize.value.height.dp - changeDp
                             change.consume()
                             launch {

@@ -25,7 +25,6 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.imageLoader
 import coil3.memory.MemoryCache
 import coil3.request.ImageRequest
-import coil3.toBitmap
 import com.elisealix22.butterforspotify.PaletteCache
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
@@ -38,6 +37,13 @@ import kotlin.random.Random
 
 private const val TAG = "AlbumImage"
 private val AlbumCornerSize = 2.dp
+private val FallbackColors = listOf(
+    ThemeColor.Tangerine,
+    ThemeColor.Orange,
+    ThemeColor.Citrus,
+    ThemeColor.Blue,
+    ThemeColor.Pink
+)
 
 @Composable
 fun AlbumImage(
@@ -52,14 +58,6 @@ fun AlbumImage(
             .clip(RoundedCornerShape(AlbumCornerSize)),
         model = url,
         contentDescription = contentDescription,
-        onSuccess = { success ->
-//            Palette.from(success.result.image.toBitmap()).generate { palette ->
-                // TODO(ELISE): Get image uri
-//                Log.e("###", "LOADED PALETTE $url ${palette?.dominantSwatch}")
-//                PaletteCache.lruCache.put(url)
-                // Use generated instance.
-//            }
-        },
         error = errorPainter(),
         placeholder = placeholderPainter()
     )
@@ -124,7 +122,9 @@ fun AsyncAlbumImage(
 }
 
 @Composable
-private fun errorPainter(): Painter = ColorPainter(PaletteCache.randomFallbackColor())
+private fun errorPainter(): Painter = ColorPainter(
+    FallbackColors[Random.Default.nextInt(FallbackColors.size)]
+)
 
 @Composable
 private fun placeholderPainter(): Painter = ColorPainter(Color.Transparent)

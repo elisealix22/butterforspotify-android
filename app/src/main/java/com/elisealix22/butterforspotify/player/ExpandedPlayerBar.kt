@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -270,13 +273,15 @@ private fun PlayerControls(
     }
 }
 
+@Composable
 fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageConfig {
     val isLandscape = containerWidth > containerHeight
     val expandedImagePadding = PaddingValues(
         start = Dimen.Padding,
         end = Dimen.Padding,
         bottom = Dimen.Padding,
-        top = PlayerTopAppBarHeight
+        top = PlayerTopAppBarHeight +
+            WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     )
     val expandedImageSize = if (isLandscape) {
         containerHeight.minus(
