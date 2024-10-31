@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.palette.graphics.Palette
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiState
@@ -65,12 +66,11 @@ fun ExpandedPlayerBar(
     expandOffset: Float,
     expandedImageConfig: ExpandedImageConfig,
     playerUiState: UiState<Player>,
-    onCloseClick: () -> Unit = {}
+    onCloseClick: () -> Unit = {},
+    onPaletteLoaded: (palette: Palette?) -> Unit = {}
 ) {
     val player = playerUiState.data ?: return
-    Box(
-        modifier = modifier.alpha(expandOffset)
-    ) {
+    Box(modifier = modifier) {
         TopAppBar(
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent,
@@ -78,7 +78,11 @@ fun ExpandedPlayerBar(
             ),
             expandedHeight = PlayerTopAppBarHeight,
             navigationIcon = {
-                IconButton(onClick = onCloseClick) {
+                IconButton(
+                    modifier = Modifier
+                        .alpha((expandOffset - 0.9F).coerceIn(0F, 1F).div(0.1F)),
+                    onClick = onCloseClick
+                ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_x_24),
                         contentDescription = stringResource(R.string.close_fullscreen_player)
@@ -100,15 +104,20 @@ fun ExpandedPlayerBar(
             contentDescription = stringResource(
                 R.string.track_art_content_description,
                 player.playerState.track?.name ?: ""
-            )
+            ),
+            onPaletteLoaded = onPaletteLoaded
         )
+
+        val contentAlpha = (expandOffset - 0.75F).coerceIn(0F, 1F).div(0.25F)
         if (expandedImageConfig.isLandscape) {
             LandscapeContent(
+                modifier = Modifier.alpha(contentAlpha),
                 player = player,
                 expandedImageConfig = expandedImageConfig
             )
         } else {
             PortraitContent(
+                modifier = Modifier.alpha(contentAlpha),
                 player = player,
                 expandedImageConfig = expandedImageConfig
             )

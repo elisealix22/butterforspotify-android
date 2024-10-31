@@ -42,6 +42,11 @@ enum class PlayerBarExpandState {
     Collapsed
 }
 
+fun PlayerBarExpandState.initialOffset(): Float = when (this) {
+    PlayerBarExpandState.Expanded -> 1F
+    PlayerBarExpandState.Collapsed -> 0F
+}
+
 @Composable
 fun Modifier.expandablePlayerBar(
     collapsedHeight: Dp,
@@ -49,7 +54,6 @@ fun Modifier.expandablePlayerBar(
     containerHeight: Dp,
     horizontalPadding: Dp,
     enabled: Boolean = true,
-    expandOffset: Float,
     expandState: PlayerBarExpandState = PlayerBarExpandState.Collapsed,
     onExpandOffsetChange: (newOffset: Float) -> Unit
 ): Modifier {
@@ -100,9 +104,7 @@ fun Modifier.expandablePlayerBar(
 
     remember(playerBarSize.value) {
         val newExpandOffset = playerBarSize.calculateExpandOffset(containerHeight)
-        if (newExpandOffset != expandOffset) {
-            onExpandOffsetChange(newExpandOffset)
-        }
+        onExpandOffsetChange(newExpandOffset)
         newExpandOffset
     }
 

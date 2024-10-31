@@ -77,21 +77,14 @@ fun PlayerBar(
     onExpandChange: (offset: Float) -> Unit = {}
 ) {
     val expandState = rememberSaveable { mutableStateOf(PlayerBarExpandState.Collapsed) }
-    val expandOffset = remember {
-        mutableFloatStateOf(
-            when (expandState.value) {
-                PlayerBarExpandState.Expanded -> 1F
-                PlayerBarExpandState.Collapsed -> 0F
-            }
-        )
-    }
+    val expandOffset = remember { mutableFloatStateOf(expandState.value.initialOffset()) }
     val expandedImageConfig = expandedImageConfig(containerWidth, containerHeight)
     val collapsedHeight = PlayerBarHeight.plus(bottomPadding)
     val collapsedImagePadding = PlayerBarHeight.minus(PlayerBarImageSizeCollapsed).div(2).let {
         PaddingValues(start = it, top = it, end = it, bottom = it.plus(bottomPadding))
     }
-    val isTrackValid by remember(playerUiState) {
-        mutableStateOf(playerUiState.data?.playerState?.track != null)
+    val track by remember(playerUiState) {
+        mutableStateOf(playerUiState.data?.playerState?.track)
     }
     val isDarkTheme = isSystemInDarkTheme()
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -103,14 +96,12 @@ fun PlayerBar(
         )
     }
     val playerBarColor = animateColorAsState(
-        targetValue = if (isTrackValid) paletteColor.value else surfaceColor,
+        targetValue = if (track != null) paletteColor.value else surfaceColor,
         label = "PlayerBarColor"
     )
 
     LaunchedEffect(playerUiState) {
-        if (expandState.value == PlayerBarExpandState.Expanded &&
-            (playerUiState.isError() || !isTrackValid)
-        ) {
+        if (expandState.value == PlayerBarExpandState.Expanded && playerUiState.isError()) {
             expandState.value = PlayerBarExpandState.Collapsed
         }
     }
@@ -122,8 +113,7 @@ fun PlayerBar(
                 containerWidth = containerWidth,
                 containerHeight = containerHeight,
                 horizontalPadding = horizontalPadding,
-                enabled = isTrackValid,
-                expandOffset = expandOffset.floatValue,
+                enabled = track != null || expandState.value == PlayerBarExpandState.Expanded,
                 expandState = expandState.value
             ) { newOffset ->
                 expandState.value = if (newOffset == 1F) {
@@ -141,16 +131,18 @@ fun PlayerBar(
         shadowElevation = 8.dp
     ) {
         Box {
-            CollapsedPlayerBar(
-                modifier = Modifier
-                    .heightIn(min = collapsedHeight)
-                    .align(Alignment.BottomStart),
-                playerUiState = playerUiState,
-                collapsedImagePadding = collapsedImagePadding,
-                expandedImageConfig = expandedImageConfig,
-                expandOffset = expandOffset.floatValue
-            ) { palette ->
-                paletteColor.value = palette.colorOrFallback(isDarkTheme)
+            if (expandOffset.floatValue < 1F) {
+                CollapsedPlayerBar(
+                    modifier = Modifier
+                        .heightIn(min = collapsedHeight)
+                        .align(Alignment.BottomStart),
+                    playerUiState = playerUiState,
+                    collapsedImagePadding = collapsedImagePadding,
+                    expandedImageConfig = expandedImageConfig,
+                    expandOffset = expandOffset.floatValue
+                ) { palette ->
+                    paletteColor.value = palette.colorOrFallback(isDarkTheme)
+                }
             }
             if (expandOffset.floatValue > 0F) {
                 ExpandedPlayerBar(
@@ -163,7 +155,9 @@ fun PlayerBar(
                     onCloseClick = {
                         expandState.value = PlayerBarExpandState.Collapsed
                     }
-                )
+                ) { palette ->
+                    paletteColor.value = palette.colorOrFallback(isDarkTheme)
+                }
             }
         }
     }
