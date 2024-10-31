@@ -131,18 +131,16 @@ fun PlayerBar(
         shadowElevation = 8.dp
     ) {
         Box {
-            if (expandOffset.floatValue < 1F) {
-                CollapsedPlayerBar(
-                    modifier = Modifier
-                        .heightIn(min = collapsedHeight)
-                        .align(Alignment.BottomStart),
-                    playerUiState = playerUiState,
-                    collapsedImagePadding = collapsedImagePadding,
-                    expandedImageConfig = expandedImageConfig,
-                    expandOffset = expandOffset.floatValue
-                ) { palette ->
-                    paletteColor.value = palette.colorOrFallback(isDarkTheme)
-                }
+            CollapsedPlayerBar(
+                modifier = Modifier
+                    .heightIn(min = collapsedHeight)
+                    .align(Alignment.BottomStart),
+                playerUiState = playerUiState,
+                collapsedImagePadding = collapsedImagePadding,
+                expandedImageConfig = expandedImageConfig,
+                expandOffset = expandOffset.floatValue
+            ) { palette ->
+                paletteColor.value = palette.colorOrFallback(isDarkTheme)
             }
             if (expandOffset.floatValue > 0F) {
                 ExpandedPlayerBar(
@@ -155,9 +153,7 @@ fun PlayerBar(
                     onCloseClick = {
                         expandState.value = PlayerBarExpandState.Collapsed
                     }
-                ) { palette ->
-                    paletteColor.value = palette.colorOrFallback(isDarkTheme)
-                }
+                )
             }
         }
     }
@@ -281,8 +277,8 @@ private fun CollapsedLoadingContent(
     player: Player?,
     onPaletteLoaded: (palette: Palette?) -> Unit
 ) {
-    player.let {
-        if (it == null) {
+    if (player == null) {
+        if (expandOffset == 0F) {
             Row(
                 modifier = modifier
                     .fillMaxWidth()
@@ -309,15 +305,15 @@ private fun CollapsedLoadingContent(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-        } else {
-            CollapsedPlayerContent(
-                player = it,
-                expandOffset = expandOffset,
-                expandedImageConfig = expandedImageConfig,
-                collapsedImagePadding = collapsedImagePadding,
-                onPaletteLoaded = onPaletteLoaded
-            )
         }
+    } else {
+        CollapsedPlayerContent(
+            player = player,
+            expandOffset = expandOffset,
+            expandedImageConfig = expandedImageConfig,
+            collapsedImagePadding = collapsedImagePadding,
+            onPaletteLoaded = onPaletteLoaded
+        )
     }
 }
 

@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.palette.graphics.Palette
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
 import com.elisealix22.butterforspotify.ui.UiState
@@ -66,8 +65,7 @@ fun ExpandedPlayerBar(
     expandOffset: Float,
     expandedImageConfig: ExpandedImageConfig,
     playerUiState: UiState<Player>,
-    onCloseClick: () -> Unit = {},
-    onPaletteLoaded: (palette: Palette?) -> Unit = {}
+    onCloseClick: () -> Unit = {}
 ) {
     val player = playerUiState.data ?: return
     Box(modifier = modifier) {
@@ -104,8 +102,7 @@ fun ExpandedPlayerBar(
             contentDescription = stringResource(
                 R.string.track_art_content_description,
                 player.playerState.track?.name ?: ""
-            ),
-            onPaletteLoaded = onPaletteLoaded
+            )
         )
 
         val contentAlpha = (expandOffset - 0.75F).coerceIn(0F, 1F).div(0.25F)
