@@ -1,14 +1,11 @@
 package com.elisealix22.butterforspotify.player
 
-import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,7 +15,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -32,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +47,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
 import com.elisealix22.butterforspotify.R
 import com.elisealix22.butterforspotify.colorOrFallback
 import com.elisealix22.butterforspotify.music.AsyncAlbumImage
@@ -83,7 +77,14 @@ fun PlayerBar(
     onExpandChange: (offset: Float) -> Unit = {}
 ) {
     val expandState = rememberSaveable { mutableStateOf(PlayerBarExpandState.Collapsed) }
-    val expandOffset = remember { mutableFloatStateOf(0F) }
+    val expandOffset = remember {
+        mutableFloatStateOf(
+            when (expandState.value) {
+                PlayerBarExpandState.Expanded -> 1F
+                PlayerBarExpandState.Collapsed -> 0F
+            }
+        )
+    }
     val isTrackValid by remember(playerUiState) {
         mutableStateOf(playerUiState.data?.playerState?.track != null)
     }
@@ -112,10 +113,16 @@ fun PlayerBar(
                 containerHeight = containerHeight,
                 horizontalPadding = horizontalPadding,
                 enabled = isTrackValid,
-                expandState = expandState
-            ) { offset ->
-                expandOffset.floatValue = offset
-                onExpandChange(offset)
+                expandOffset = expandOffset.floatValue,
+                expandState = expandState.value
+            ) { newOffset ->
+                expandState.value = if (newOffset == 1F) {
+                    PlayerBarExpandState.Expanded
+                } else {
+                    PlayerBarExpandState.Collapsed
+                }
+                expandOffset.floatValue = newOffset
+                onExpandChange(newOffset)
             },
         color = if (isTrackValid) paletteColor.value else defaultSurfaceColor,
         shape = PlayerBarRoundedCorner.value.times(1F.minus(expandOffset.floatValue)).let { dp ->
@@ -220,7 +227,7 @@ private fun CollapsedPlayerContent(
                 },
             imageUri = player.playerState.track?.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
-            imageDimension = com.spotify.protocol.types.Image.Dimension.THUMBNAIL,
+            imageDimension = com.spotify.protocol.types.Image.Dimension.SMALL,
             size = PlayerBarImageSizeCollapsed,
             contentDescription = stringResource(
                 R.string.track_art_content_description,
@@ -234,6 +241,11 @@ private fun CollapsedPlayerContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(
+                        max = PlayerBarImageSizeCollapsed +
+                            collapsedImagePadding.calculateTopPadding() +
+                            collapsedImagePadding.calculateBottomPadding()
+                    )
                     .align(Alignment.BottomStart)
                     .alpha(rowAlpha)
                     .padding(
