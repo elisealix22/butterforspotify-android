@@ -63,7 +63,7 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 private val PlayerBarHeight = 64.dp
 private val PlayerBarImageSizeCollapsed = 48.dp
-private val PlayerBarRoundedCorner = 4.dp
+private val PlayerBarRoundedCorner = 8.dp
 private val PlayerTextStartPadding = 12.dp
 
 @Composable

@@ -52,6 +52,7 @@ fun AdaptivePlayerBarScaffold(
     contentColor: Color = NavigationSuiteScaffoldDefaults.contentColor,
     content: @Composable () -> Unit = {}
 ) {
+    // TODO(elise): 3 button nav width needs to be fixed
     val configuration = LocalConfiguration.current
 //    val containerWidth = with(LocalDensity.current) {
 //        currentWindowSize().width.toDp().let {
