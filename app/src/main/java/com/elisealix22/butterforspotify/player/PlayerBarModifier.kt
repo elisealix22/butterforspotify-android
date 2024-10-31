@@ -31,9 +31,13 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 private val MaximumVelocity = Velocity(1F, 500F)
-private val AnimationSpec = SpringSpec<Size>(
+private val ExpandAnimationSpec = SpringSpec<Size>(
     dampingRatio = Spring.DampingRatioNoBouncy,
     stiffness = Spring.StiffnessMediumLow
+)
+private val CollapseAnimationSpec = SpringSpec<Size>(
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessMedium
 )
 
 @Serializable
@@ -80,13 +84,13 @@ fun Modifier.expandablePlayerBar(
                 playerBarSize.stop()
                 playerBarSize.animateTo(
                     targetValue = playerBarSize.upperBound ?: error("Upper bound not set"),
-                    animationSpec = AnimationSpec
+                    animationSpec = ExpandAnimationSpec
                 )
             } else {
                 playerBarSize.stop()
                 playerBarSize.animateTo(
                     targetValue = playerBarSize.lowerBound ?: error("Lower bound not set"),
-                    animationSpec = AnimationSpec
+                    animationSpec = CollapseAnimationSpec
                 )
             }
         }
@@ -167,7 +171,11 @@ fun Modifier.expandablePlayerBar(
                             playerBarSize.animateTo(
                                 targetValue = endSize,
                                 initialVelocity = velocity,
-                                animationSpec = AnimationSpec
+                                animationSpec = if (isMovingUp) {
+                                    ExpandAnimationSpec
+                                } else {
+                                    CollapseAnimationSpec
+                                }
                             )
                         }
                     }

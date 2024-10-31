@@ -104,7 +104,6 @@ fun ExpandedPlayerBar(
                 player.playerState.track?.name ?: ""
             )
         )
-
         val contentAlpha = (expandOffset - 0.75F).coerceIn(0F, 1F).div(0.25F)
         if (expandedImageConfig.isLandscape) {
             LandscapeContent(
