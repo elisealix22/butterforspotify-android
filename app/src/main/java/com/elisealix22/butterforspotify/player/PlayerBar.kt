@@ -1,5 +1,6 @@
 package com.elisealix22.butterforspotify.player
 
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -65,6 +66,7 @@ private val PlayerBarHeight = 64.dp
 private val PlayerBarImageSizeCollapsed = 48.dp
 private val PlayerBarRoundedCorner = 8.dp
 private val PlayerTextStartPadding = 12.dp
+private val CollapsedImageDimension = com.spotify.protocol.types.Image.Dimension.SMALL
 
 @Composable
 fun PlayerBar(
@@ -90,9 +92,7 @@ fun PlayerBar(
     val surfaceColor = MaterialTheme.colorScheme.surface
     val paletteColor = remember {
         mutableStateOf(
-            PaletteCache
-                .get(playerUiState.data?.playerState?.track?.imageUri?.raw)
-                .colorOrFallback(isDarkTheme)
+            PaletteCache.get(track?.imageUri, CollapsedImageDimension).colorOrFallback(isDarkTheme)
         )
     }
     val playerBarColor = animateColorAsState(
@@ -226,7 +226,7 @@ private fun CollapsedPlayerContent(
                 },
             imageUri = player.playerState.track?.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
-            imageDimension = com.spotify.protocol.types.Image.Dimension.SMALL,
+            imageDimension = CollapsedImageDimension,
             size = PlayerBarImageSizeCollapsed,
             contentDescription = stringResource(
                 R.string.track_art_content_description,
