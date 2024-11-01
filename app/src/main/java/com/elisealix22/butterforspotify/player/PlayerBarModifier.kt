@@ -54,14 +54,14 @@ fun PlayerBarExpandState.initialOffset(): Float = when (this) {
 @Composable
 fun Modifier.expandablePlayerBar(
     collapsedHeight: Dp,
+    collapsedHorizontalPadding: Dp,
     containerWidth: Dp,
     containerHeight: Dp,
-    horizontalPadding: Dp,
     enabled: Boolean = true,
     expandState: PlayerBarExpandState = PlayerBarExpandState.Collapsed,
     onExpandOffsetChange: (newOffset: Float) -> Unit
 ): Modifier {
-    val minPlayerBarWidth: Float = containerWidth.value - horizontalPadding.times(2).value
+    val minPlayerBarWidth: Float = containerWidth.value - collapsedHorizontalPadding.times(2).value
     val maxPlayerBarWidth: Float = containerWidth.value
     val playerBarSize = remember(collapsedHeight, containerHeight, minPlayerBarWidth) {
         val lowerBound = Size(minPlayerBarWidth, collapsedHeight.value)

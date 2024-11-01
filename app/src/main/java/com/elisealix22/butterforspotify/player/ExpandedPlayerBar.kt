@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -69,7 +73,11 @@ fun ExpandedPlayerBar(
     onCloseClick: () -> Unit = {}
 ) {
     val player = playerUiState.data ?: return
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier.padding(
+            WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal).asPaddingValues()
+        )
+    ) {
         TopAppBar(
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent,
@@ -132,14 +140,17 @@ private fun LandscapeContent(
     player: Player,
     expandedImageConfig: ExpandedImageConfig
 ) {
-    val padding = Dimen.PaddingDouble
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(
-                top = padding,
-                start = expandedImageConfig.expandedImageSize.plus(padding),
-                end = padding
+                top = Dimen.Padding,
+                bottom = Dimen.Padding,
+                start = expandedImageConfig.expandedImageSize.plus(
+                    expandedImageConfig.expandedImagePadding
+                        .calculateStartPadding(LayoutDirection.Ltr)
+                ),
+                end = Dimen.PaddingDouble
             )
     ) {
         Spacer(Modifier.weight(1F))
@@ -147,7 +158,7 @@ private fun LandscapeContent(
         PlayerControls(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(vertical = padding),
+                .padding(vertical = Dimen.PaddingDouble),
             player = player
         )
     }
@@ -285,14 +296,25 @@ private fun PlayerControls(
 
 @Composable
 fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageConfig {
+    val leftPaddingLandscape = 48.dp
+    val insetTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
+    val insetBottomPadding = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     val isLandscape = containerWidth > containerHeight
-    val expandedImagePadding = PaddingValues(
-        start = Dimen.Padding,
-        end = Dimen.Padding,
-        bottom = Dimen.Padding,
-        top = PlayerTopAppBarHeight +
-            WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
-    )
+    val expandedImagePadding = if (isLandscape) {
+        PaddingValues(
+            start = Dimen.Padding + leftPaddingLandscape,
+            end = Dimen.Padding,
+            bottom = Dimen.Padding + insetBottomPadding,
+            top = Dimen.Padding + insetTopPadding
+        )
+    } else {
+        PaddingValues(
+            start = Dimen.Padding,
+            end = Dimen.Padding,
+            bottom = Dimen.Padding + insetBottomPadding,
+            top = PlayerTopAppBarHeight + insetTopPadding
+        )
+    }
     val expandedImageSize = if (isLandscape) {
         containerHeight.minus(
             expandedImagePadding.calculateTopPadding()
@@ -309,7 +331,8 @@ fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageC
         expandedImagePadding = expandedImagePadding,
         expandedImageSize = expandedImageSize,
         expandedImageX = if (isLandscape) {
-            0.dp
+            WindowInsets.displayCutout.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr) +
+                leftPaddingLandscape
         } else {
             containerWidth.div(2)
                 .minus(expandedImageSize.div(2))

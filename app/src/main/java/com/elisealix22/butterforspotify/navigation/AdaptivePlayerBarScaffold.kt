@@ -1,12 +1,9 @@
 package com.elisealix22.butterforspotify.navigation
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItemDefaults
@@ -126,8 +123,8 @@ fun AdaptivePlayerBarScaffold(
                     playerUiState = playerUiState,
                     containerWidth = containerSize.width,
                     containerHeight = containerSize.height,
-                    bottomPadding = playerBarBottomPadding(isLandscape),
-                    horizontalPadding = if (isLandscape) {
+                    collapsedBottomPadding = if (isLandscape) bottomNavigationPadding else 0.dp,
+                    collapsedHorizontalPadding = if (isLandscape) {
                         NavigationBarSize.plus(Dimen.PaddingOneAndAHalf)
                     } else {
                         Dimen.PaddingOneAndAHalf
@@ -146,16 +143,6 @@ private fun verticalOffset(expandOffset: Float, bottomPadding: Dp, isLandscape: 
         0.dp
     } else {
         expandOffset.times(NavigationBarSize.value.plus(bottomPadding.value)).dp
-    }
-}
-
-// TODO(elise): Move this into player bar?
-@Composable
-private fun playerBarBottomPadding(isLandscape: Boolean): Dp {
-    return if (isLandscape) {
-        WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-    } else {
-        0.dp
     }
 }
 

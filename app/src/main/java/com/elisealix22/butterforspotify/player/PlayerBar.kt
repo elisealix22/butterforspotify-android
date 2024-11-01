@@ -73,16 +73,16 @@ fun PlayerBar(
     playerUiState: UiState<Player>,
     containerWidth: Dp = LocalConfiguration.current.screenWidthDp.dp,
     containerHeight: Dp = LocalConfiguration.current.screenHeightDp.dp,
-    horizontalPadding: Dp = Dimen.PaddingOneAndAHalf,
-    bottomPadding: Dp = 0.dp,
+    collapsedHorizontalPadding: Dp = Dimen.PaddingOneAndAHalf,
+    collapsedBottomPadding: Dp = 0.dp,
     onExpandChange: (offset: Float) -> Unit = {}
 ) {
     val expandState = rememberSaveable { mutableStateOf(PlayerBarExpandState.Collapsed) }
     val expandOffset = remember { mutableFloatStateOf(expandState.value.initialOffset()) }
     val expandedImageConfig = expandedImageConfig(containerWidth, containerHeight)
-    val collapsedHeight = PlayerBarHeight.plus(bottomPadding)
+    val collapsedHeight = PlayerBarHeight.plus(collapsedBottomPadding)
     val collapsedImagePadding = PlayerBarHeight.minus(PlayerBarImageSizeCollapsed).div(2).let {
-        PaddingValues(start = it, top = it, end = it, bottom = it.plus(bottomPadding))
+        PaddingValues(start = it, top = it, end = it, bottom = it.plus(collapsedBottomPadding))
     }
     val track by remember(playerUiState) {
         mutableStateOf(playerUiState.data?.playerState?.track)
@@ -111,7 +111,7 @@ fun PlayerBar(
                 collapsedHeight = collapsedHeight,
                 containerWidth = containerWidth,
                 containerHeight = containerHeight,
-                horizontalPadding = horizontalPadding,
+                collapsedHorizontalPadding = collapsedHorizontalPadding,
                 enabled = track != null || expandState.value == PlayerBarExpandState.Expanded,
                 expandState = expandState.value
             ) { newOffset ->
