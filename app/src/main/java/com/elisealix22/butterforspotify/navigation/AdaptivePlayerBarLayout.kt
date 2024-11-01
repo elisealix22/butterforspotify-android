@@ -1,10 +1,7 @@
 package com.elisealix22.butterforspotify.navigation
 
-import android.app.Activity
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.absolutePadding
@@ -14,15 +11,11 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastFirst
@@ -60,8 +53,9 @@ fun AdaptivePlayerBarLayout(
             modifier = Modifier
                 .layoutId(NAVIGATION_TAG)
                 .absolutePadding(left = leftNavigationPadding())
-                .consumeWindowInsets(WindowInsets.systemBars
-                    .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
+                .consumeWindowInsets(
+                    WindowInsets.systemBars
+                        .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
                 )
         ) {
             navigationSuite(bottomNavigationPadding)
@@ -69,8 +63,9 @@ fun AdaptivePlayerBarLayout(
         Box(
             modifier = Modifier.layoutId(CONTENT_TAG)
                 .absolutePadding(right = rightNavigationPadding())
-                .consumeWindowInsets(WindowInsets.systemBars
-                    .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
+                .consumeWindowInsets(
+                    WindowInsets.systemBars
+                        .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
                 )
         ) {
             content()

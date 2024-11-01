@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
         }
 
         val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                Configuration.UI_MODE_NIGHT_YES
+            Configuration.UI_MODE_NIGHT_YES
         enableEdgeToEdge(
             navigationBarStyle = if (isDark) {
                 SystemBarStyle.dark(scrim = Color.TRANSPARENT)

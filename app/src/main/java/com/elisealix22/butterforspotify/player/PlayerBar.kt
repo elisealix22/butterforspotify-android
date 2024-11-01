@@ -1,6 +1,5 @@
 package com.elisealix22.butterforspotify.player
 
-import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
