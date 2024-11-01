@@ -3,9 +3,16 @@ package com.elisealix22.butterforspotify.navigation
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -29,7 +36,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import com.elisealix22.butterforspotify.player.MockPlayer
@@ -52,16 +61,12 @@ fun AdaptivePlayerBarScaffold(
     contentColor: Color = NavigationSuiteScaffoldDefaults.contentColor,
     content: @Composable () -> Unit = {}
 ) {
-    // TODO(elise): 3 button nav width needs to be fixed
-    val configuration = LocalConfiguration.current
-//    val containerWidth = with(LocalDensity.current) {
-//        currentWindowSize().width.toDp().let {
-//            it - (it - configuration.screenWidthDp.dp) +
-//        }
-//    }
-    val containerWidth = LocalConfiguration.current.screenWidthDp.dp
-    val containerHeight = with(LocalDensity.current) { currentWindowSize().height.toDp() }
-    val isLandscape = containerWidth > containerHeight
+    val containerSize = with(LocalDensity.current) {
+        currentWindowSize().let {
+            DpSize(it.width.toDp(), it.height.toDp())
+        }
+    }
+    val isLandscape = containerSize.width > containerSize.height
     val layoutType = if (isLandscape) {
         NavigationSuiteType.NavigationRail
     } else {
@@ -76,7 +81,7 @@ fun AdaptivePlayerBarScaffold(
     } else {
         playerBarExpandOffset.floatValue * navigationBarSize.value
     }
-    Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
+    Surface(modifier = modifier.fillMaxSize(), color = containerColor, contentColor = contentColor) {
         AdaptivePlayerBarLayout(
             navigationSuite = {
                 NavigationSuite(
@@ -112,8 +117,8 @@ fun AdaptivePlayerBarScaffold(
                         .align(Alignment.BottomCenter)
                         .offset { IntOffset(0, verticalOffset.dp.roundToPx()) },
                     playerUiState = playerUiState,
-                    containerWidth = containerWidth,
-                    containerHeight = containerHeight,
+                    containerWidth = containerSize.width,
+                    containerHeight = containerSize.height,
                     bottomPadding = playerBarBottomPadding(isLandscape),
                     horizontalPadding = if (isLandscape) {
                         navigationBarSize.plus(Dimen.PaddingOneAndAHalf)
@@ -129,6 +134,7 @@ fun AdaptivePlayerBarScaffold(
     }
 }
 
+// TODO(elise): Move this into player bar?
 @Composable
 private fun playerBarBottomPadding(isLandscape: Boolean): Dp {
     return if (isLandscape) {
