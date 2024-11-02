@@ -4,41 +4,24 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastFirst
 
 private const val NAVIGATION_TAG = "adaptiveNavigation"
 private const val CONTENT_TAG = "adaptiveContent"
 private const val PLAYER_BAR_TAG = "adaptivePlayerBar"
-
-@Composable
-private fun leftNavigationPadding(): Dp =
-    WindowInsets.displayCutout.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr).plus(
-        WindowInsets.systemBars.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
-    )
-
-@Composable
-private fun rightNavigationPadding(): Dp =
-    WindowInsets.displayCutout.asPaddingValues().calculateRightPadding(LayoutDirection.Ltr).plus(
-        WindowInsets.systemBars.asPaddingValues().calculateRightPadding(LayoutDirection.Ltr)
-    )
-
-@Composable
-private fun bottomNavigationPadding(): Dp =
-    WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
 
 @Composable
 fun AdaptivePlayerBarLayout(
@@ -47,14 +30,14 @@ fun AdaptivePlayerBarLayout(
     content: @Composable () -> Unit = {},
     playerBar: @Composable BoxScope.(bottomNavigationPadding: Dp) -> Unit = {}
 ) {
-    val bottomNavigationPadding = bottomNavigationPadding()
+    val bottomNavigationPadding = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     Layout({
         Box(
             modifier = Modifier
                 .layoutId(NAVIGATION_TAG)
-                .absolutePadding(left = leftNavigationPadding())
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Left))
                 .consumeWindowInsets(
-                    WindowInsets.systemBars
+                    WindowInsets.safeDrawing
                         .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
                 )
         ) {
@@ -63,9 +46,9 @@ fun AdaptivePlayerBarLayout(
         Box(
             modifier = Modifier
                 .layoutId(CONTENT_TAG)
-                .absolutePadding(right = rightNavigationPadding())
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Right))
                 .consumeWindowInsets(
-                    WindowInsets.systemBars
+                    WindowInsets.safeDrawing
                         .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
                 )
         ) {

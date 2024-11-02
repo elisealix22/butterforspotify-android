@@ -10,6 +10,10 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
 import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +27,7 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
@@ -61,7 +66,14 @@ fun Modifier.expandablePlayerBar(
     expandState: PlayerBarExpandState = PlayerBarExpandState.Collapsed,
     onExpandOffsetChange: (newOffset: Float) -> Unit
 ): Modifier {
-    val minPlayerBarWidth: Float = containerWidth.value - collapsedHorizontalPadding.times(2).value
+    val leftInsetPadding = WindowInsets.safeDrawing
+        .asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
+    val rightInsetPadding = WindowInsets.safeDrawing
+        .asPaddingValues().calculateRightPadding(LayoutDirection.Ltr)
+    val minPlayerBarWidth: Float = containerWidth.value
+        .minus(collapsedHorizontalPadding.times(2).value)
+        .plus(leftInsetPadding.value)
+        .plus(rightInsetPadding.value)
     val maxPlayerBarWidth: Float = containerWidth.value
     val playerBarSize = remember(collapsedHeight, containerHeight, minPlayerBarWidth) {
         val lowerBound = Size(minPlayerBarWidth, collapsedHeight.value)
@@ -106,13 +118,18 @@ fun Modifier.expandablePlayerBar(
         }
     }
 
-    remember(playerBarSize.value) {
+    val expandOffset = remember(playerBarSize.value) {
         val newExpandOffset = playerBarSize.calculateExpandOffset(containerHeight)
         onExpandOffsetChange(newExpandOffset)
         newExpandOffset
     }
 
     return this
+        .offset(
+            x = 1F.minus(expandOffset).times(
+                leftInsetPadding.div(2).value.minus(rightInsetPadding.div(2).value)
+            ).dp
+        )
         .size(
             width = playerBarSize.value.width.dp,
             height = playerBarSize.value.height.dp
@@ -148,7 +165,7 @@ fun Modifier.expandablePlayerBar(
                             change.consume()
                             launch {
                                 val availableHeight: Dp = containerHeight - collapsedHeight
-                                val traveledHeight = targetHeight - collapsedHeight
+                                val traveledHeight: Dp = targetHeight - collapsedHeight
                                 val widthOffset = traveledHeight.div(availableHeight)
                                 val availableWidth = maxPlayerBarWidth - minPlayerBarWidth
                                 val targetWidth = minPlayerBarWidth + (widthOffset * availableWidth)
