@@ -61,7 +61,8 @@ fun AdaptivePlayerBarLayout(
             navigationSuite(bottomNavigationPadding)
         }
         Box(
-            modifier = Modifier.layoutId(CONTENT_TAG)
+            modifier = Modifier
+                .layoutId(CONTENT_TAG)
                 .absolutePadding(right = rightNavigationPadding())
                 .consumeWindowInsets(
                     WindowInsets.systemBars
