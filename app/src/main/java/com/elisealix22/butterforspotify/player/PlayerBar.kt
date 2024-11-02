@@ -79,7 +79,7 @@ fun PlayerBar(
 ) {
     val expandState = rememberSaveable { mutableStateOf(PlayerBarExpandState.Collapsed) }
     val expandOffset = remember { mutableFloatStateOf(expandState.value.initialOffset()) }
-    val expandedImageConfig = expandedImageConfig(containerWidth, containerHeight)
+    val expandedConfig = expandedConfig(containerWidth, containerHeight)
     val collapsedHeight = PlayerBarHeight.plus(collapsedBottomPadding)
     val collapsedImagePadding = PlayerBarHeight.minus(PlayerBarImageSizeCollapsed).div(2).let {
         PaddingValues(start = it, top = it, end = it, bottom = it.plus(collapsedBottomPadding))
@@ -136,7 +136,7 @@ fun PlayerBar(
                     .align(Alignment.BottomStart),
                 playerUiState = playerUiState,
                 collapsedImagePadding = collapsedImagePadding,
-                expandedImageConfig = expandedImageConfig,
+                expandedConfig = expandedConfig,
                 expandOffset = expandOffset.floatValue
             ) { palette ->
                 paletteColor.value = palette.colorOrFallback(isDarkTheme)
@@ -147,7 +147,7 @@ fun PlayerBar(
                         .fillMaxSize()
                         .align(Alignment.TopStart),
                     playerUiState = playerUiState,
-                    expandedImageConfig = expandedImageConfig,
+                    expandedConfig = expandedConfig,
                     expandOffset = expandOffset.floatValue,
                     onCloseClick = {
                         expandState.value = PlayerBarExpandState.Collapsed
@@ -162,7 +162,7 @@ fun PlayerBar(
 private fun CollapsedPlayerBar(
     modifier: Modifier = Modifier,
     playerUiState: UiState<Player>,
-    expandedImageConfig: ExpandedImageConfig,
+    expandedConfig: ExpandedConfig,
     expandOffset: Float,
     collapsedImagePadding: PaddingValues,
     onPaletteLoaded: (palette: Palette?) -> Unit
@@ -173,7 +173,7 @@ private fun CollapsedPlayerBar(
                 player = playerUiState.data,
                 expandOffset = expandOffset,
                 collapsedImagePadding = collapsedImagePadding,
-                expandedImageConfig = expandedImageConfig,
+                expandedConfig = expandedConfig,
                 onPaletteLoaded = onPaletteLoaded
             )
             is UiState.Loading,
@@ -181,7 +181,7 @@ private fun CollapsedPlayerBar(
                 player = playerUiState.data,
                 expandOffset = expandOffset,
                 collapsedImagePadding = collapsedImagePadding,
-                expandedImageConfig = expandedImageConfig,
+                expandedConfig = expandedConfig,
                 onPaletteLoaded = onPaletteLoaded
             )
             is UiState.Error -> CollapsedErrorContent(
@@ -198,14 +198,14 @@ private fun CollapsedPlayerContent(
     modifier: Modifier = Modifier,
     player: Player,
     expandOffset: Float,
-    expandedImageConfig: ExpandedImageConfig,
+    expandedConfig: ExpandedConfig,
     collapsedImagePadding: PaddingValues,
     onPaletteLoaded: (palette: Palette?) -> Unit
 ) {
     Box(modifier = modifier) {
         val rowAlpha = 1F - (expandOffset / .05F).coerceIn(0F, 1F)
         val imageSize = PlayerBarImageSizeCollapsed.plus(
-            expandedImageConfig.expandedImageSize
+            expandedConfig.expandedImageSize
                 .minus(PlayerBarImageSizeCollapsed)
                 .times(expandOffset)
         )
@@ -214,9 +214,9 @@ private fun CollapsedPlayerContent(
                 .padding(collapsedImagePadding)
                 .size(imageSize)
                 .offset {
-                    val offsetX = expandedImageConfig.expandedImageX
+                    val offsetX = expandedConfig.expandedImageX
                         .plus(collapsedImagePadding.calculateLeftPadding(LayoutDirection.Ltr))
-                    val offsetY = expandedImageConfig.expandedImageY
+                    val offsetY = expandedConfig.expandedImageY
                         .plus(collapsedImagePadding.calculateBottomPadding())
                     IntOffset(
                         x = (offsetX * expandOffset).roundToPx(),
@@ -271,7 +271,7 @@ private fun CollapsedPlayerContent(
 private fun CollapsedLoadingContent(
     modifier: Modifier = Modifier,
     collapsedImagePadding: PaddingValues,
-    expandedImageConfig: ExpandedImageConfig,
+    expandedConfig: ExpandedConfig,
     expandOffset: Float,
     player: Player?,
     onPaletteLoaded: (palette: Palette?) -> Unit
@@ -309,7 +309,7 @@ private fun CollapsedLoadingContent(
         CollapsedPlayerContent(
             player = player,
             expandOffset = expandOffset,
-            expandedImageConfig = expandedImageConfig,
+            expandedConfig = expandedConfig,
             collapsedImagePadding = collapsedImagePadding,
             onPaletteLoaded = onPaletteLoaded
         )

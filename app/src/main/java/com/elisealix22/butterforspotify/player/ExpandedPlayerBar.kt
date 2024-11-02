@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -55,12 +56,13 @@ import com.spotify.protocol.types.Image
 
 private val PlayerTopAppBarHeight = 64.dp
 
-data class ExpandedImageConfig(
+data class ExpandedConfig(
     val isLandscape: Boolean,
     val expandedImageSize: Dp,
     val expandedImagePadding: PaddingValues,
     val expandedImageX: Dp,
-    val expandedImageY: Dp
+    val expandedImageY: Dp,
+    val expandedWindowInsets: WindowInsets
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,14 +70,13 @@ data class ExpandedImageConfig(
 fun ExpandedPlayerBar(
     modifier: Modifier = Modifier,
     expandOffset: Float,
-    expandedImageConfig: ExpandedImageConfig,
+    expandedConfig: ExpandedConfig,
     playerUiState: UiState<Player>,
     onCloseClick: () -> Unit = {}
 ) {
     val player = playerUiState.data ?: return
     Box(
-        modifier = modifier
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+        modifier = modifier.windowInsetsPadding(expandedConfig.expandedWindowInsets)
     ) {
         TopAppBar(
             colors = TopAppBarDefaults.topAppBarColors(
@@ -101,25 +102,25 @@ fun ExpandedPlayerBar(
             modifier = Modifier
                 .alpha(if (expandOffset == 1F) 1F else 0F)
                 .align(Alignment.TopStart)
-                .padding(expandedImageConfig.expandedImagePadding)
-                .size(expandedImageConfig.expandedImageSize),
+                .padding(expandedConfig.expandedImagePadding)
+                .size(expandedConfig.expandedImageSize),
             imageUri = player.playerState.track?.imageUri,
             imagesApi = player.spotifyApis?.imagesApi,
             imageDimension = Image.Dimension.LARGE,
-            size = expandedImageConfig.expandedImageSize,
+            size = expandedConfig.expandedImageSize,
             contentDescription = stringResource(
                 R.string.track_art_content_description,
                 player.playerState.track?.name ?: ""
             )
         )
         val contentAlpha = (expandOffset - 0.75F).coerceIn(0F, 1F).div(0.25F)
-        if (expandedImageConfig.isLandscape) {
+        if (expandedConfig.isLandscape) {
             LandscapeContent(
                 modifier = Modifier
                     .alpha(contentAlpha)
                     .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 player = player,
-                expandedImageConfig = expandedImageConfig
+                expandedConfig = expandedConfig
             )
         } else {
             PortraitContent(
@@ -127,7 +128,7 @@ fun ExpandedPlayerBar(
                     .alpha(contentAlpha)
                     .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 player = player,
-                expandedImageConfig = expandedImageConfig
+                expandedConfig = expandedConfig
             )
         }
     }
@@ -137,7 +138,7 @@ fun ExpandedPlayerBar(
 private fun LandscapeContent(
     modifier: Modifier = Modifier,
     player: Player,
-    expandedImageConfig: ExpandedImageConfig
+    expandedConfig: ExpandedConfig
 ) {
     Column(
         modifier = modifier
@@ -145,19 +146,22 @@ private fun LandscapeContent(
             .padding(
                 top = Dimen.Padding,
                 bottom = Dimen.Padding,
-                start = expandedImageConfig.expandedImageSize.plus(
-                    expandedImageConfig.expandedImagePadding
+                start = expandedConfig.expandedImageSize.plus(
+                    expandedConfig.expandedImagePadding
                         .calculateStartPadding(LayoutDirection.Ltr)
                 ),
                 end = Dimen.PaddingDouble
             )
     ) {
         Spacer(Modifier.weight(1F))
-        TrackInfo(player = player)
+        TrackInfo(
+            modifier = Modifier.padding(Dimen.PaddingDouble),
+            player = player
+        )
         PlayerControls(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(vertical = Dimen.PaddingDouble),
+                .padding(top = Dimen.PaddingDouble),
             player = player
         )
     }
@@ -167,16 +171,16 @@ private fun LandscapeContent(
 private fun PortraitContent(
     modifier: Modifier = Modifier,
     player: Player,
-    expandedImageConfig: ExpandedImageConfig
+    expandedConfig: ExpandedConfig
 ) {
     val padding = Dimen.PaddingDouble
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(
-                top = expandedImageConfig.expandedImagePadding
+                top = expandedConfig.expandedImagePadding
                     .calculateTopPadding()
-                    .plus(expandedImageConfig.expandedImageSize)
+                    .plus(expandedConfig.expandedImageSize)
                     .plus(padding)
             )
     ) {
@@ -294,11 +298,16 @@ private fun PlayerControls(
 }
 
 @Composable
-fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageConfig {
+fun expandedConfig(containerWidth: Dp, containerHeight: Dp): ExpandedConfig {
     val leftPaddingLandscape = 48.dp
     val insetTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     val insetBottomPadding = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     val isLandscape = containerWidth > containerHeight
+    val expandedWindowInsets = if (isLandscape) {
+        WindowInsets.safeContent.only(WindowInsetsSides.Horizontal)
+    } else {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
+    }
     val expandedImagePadding = if (isLandscape) {
         PaddingValues(
             start = Dimen.Padding + leftPaddingLandscape,
@@ -310,7 +319,7 @@ fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageC
         PaddingValues(
             start = Dimen.Padding,
             end = Dimen.Padding,
-            bottom = Dimen.Padding + insetBottomPadding,
+            bottom = Dimen.Padding,
             top = PlayerTopAppBarHeight + insetTopPadding
         )
     }
@@ -325,13 +334,13 @@ fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageC
                 .plus(expandedImagePadding.calculateRightPadding(LayoutDirection.Ltr))
         )
     }
-    return ExpandedImageConfig(
+    return ExpandedConfig(
         isLandscape = isLandscape,
         expandedImagePadding = expandedImagePadding,
         expandedImageSize = expandedImageSize,
         expandedImageX = if (isLandscape) {
             leftPaddingLandscape.plus(
-                WindowInsets.safeDrawing.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
+                expandedWindowInsets.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
             )
         } else {
             containerWidth.div(2)
@@ -340,7 +349,8 @@ fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageC
         },
         expandedImageY = containerHeight.times(-1)
             .plus(expandedImagePadding.calculateTopPadding())
-            .plus(expandedImageSize)
+            .plus(expandedImageSize),
+        expandedWindowInsets = expandedWindowInsets
     )
 }
 
@@ -355,7 +365,7 @@ fun ExpandedPlayerBarPreview() {
             ExpandedPlayerBar(
                 playerUiState = uiState,
                 expandOffset = 1F,
-                expandedImageConfig = expandedImageConfig(
+                expandedConfig = expandedConfig(
                     containerWidth = containerWidth,
                     containerHeight = containerHeight
                 )
@@ -375,7 +385,7 @@ fun ExpandedPlayerBarCachedPreview() {
             ExpandedPlayerBar(
                 playerUiState = uiState,
                 expandOffset = 1F,
-                expandedImageConfig = expandedImageConfig(
+                expandedConfig = expandedConfig(
                     containerWidth = containerWidth,
                     containerHeight = containerHeight
                 )
@@ -395,7 +405,7 @@ fun ExpandedPlayerBarLandscapePreview() {
             ExpandedPlayerBar(
                 playerUiState = uiState,
                 expandOffset = 1F,
-                expandedImageConfig = expandedImageConfig(
+                expandedConfig = expandedConfig(
                     containerWidth = containerWidth,
                     containerHeight = containerHeight
                 )
