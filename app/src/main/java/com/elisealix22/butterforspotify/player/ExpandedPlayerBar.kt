@@ -9,11 +9,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -74,9 +74,8 @@ fun ExpandedPlayerBar(
 ) {
     val player = playerUiState.data ?: return
     Box(
-        modifier = modifier.padding(
-            WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal).asPaddingValues()
-        )
+        modifier = modifier
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
     ) {
         TopAppBar(
             colors = TopAppBarDefaults.topAppBarColors(
@@ -118,7 +117,7 @@ fun ExpandedPlayerBar(
             LandscapeContent(
                 modifier = Modifier
                     .alpha(contentAlpha)
-                    .windowInsetsPadding(WindowInsets.systemBars),
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 player = player,
                 expandedImageConfig = expandedImageConfig
             )
@@ -126,7 +125,7 @@ fun ExpandedPlayerBar(
             PortraitContent(
                 modifier = Modifier
                     .alpha(contentAlpha)
-                    .windowInsetsPadding(WindowInsets.systemBars),
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
                 player = player,
                 expandedImageConfig = expandedImageConfig
             )
@@ -331,8 +330,9 @@ fun expandedImageConfig(containerWidth: Dp, containerHeight: Dp): ExpandedImageC
         expandedImagePadding = expandedImagePadding,
         expandedImageSize = expandedImageSize,
         expandedImageX = if (isLandscape) {
-            WindowInsets.displayCutout.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr) +
-                leftPaddingLandscape
+            leftPaddingLandscape.plus(
+                WindowInsets.safeDrawing.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
+            )
         } else {
             containerWidth.div(2)
                 .minus(expandedImageSize.div(2))

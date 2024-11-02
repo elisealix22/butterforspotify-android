@@ -125,7 +125,7 @@ fun AdaptivePlayerBarScaffold(
                     containerHeight = containerSize.height,
                     collapsedBottomPadding = if (isLandscape) bottomNavigationPadding else 0.dp,
                     collapsedHorizontalPadding = if (isLandscape) {
-                        NavigationBarSize.plus(Dimen.PaddingOneAndAHalf)
+                        containerSize.width * 0.2F
                     } else {
                         Dimen.PaddingOneAndAHalf
                     },
