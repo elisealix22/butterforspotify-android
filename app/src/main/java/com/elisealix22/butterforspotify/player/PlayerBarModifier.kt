@@ -27,6 +27,7 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -125,15 +126,18 @@ fun Modifier.expandablePlayerBar(
     }
 
     return this
-        .offset(
-            x = 1F.minus(expandOffset).times(
-                leftInsetPadding.div(2).value.minus(rightInsetPadding.div(2).value)
-            ).dp
-        )
         .size(
             width = playerBarSize.value.width.dp,
             height = playerBarSize.value.height.dp
         )
+        .offset {
+            IntOffset(
+                x = 1F.minus(expandOffset).times(
+                    leftInsetPadding.div(2).value.minus(rightInsetPadding.div(2).value)
+                ).dp.roundToPx(),
+                y = 0
+            )
+        }
         .clickable(
             enabled = enabled && playerBarSize.isCollapsed(),
             onClickLabel = stringResource(R.string.open_fullscreen_player),

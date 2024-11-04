@@ -8,8 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -62,7 +62,8 @@ data class ExpandedConfig(
     val expandedImagePadding: PaddingValues,
     val expandedImageX: Dp,
     val expandedImageY: Dp,
-    val expandedWindowInsets: WindowInsets
+    val expandedWindowInsets: WindowInsets,
+    val expandedContentWidth: Dp
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,18 +118,27 @@ fun ExpandedPlayerBar(
         if (expandedConfig.isLandscape) {
             LandscapeContent(
                 modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
+                    .width(expandedConfig.expandedContentWidth)
+                    .fillMaxHeight()
+                    .padding(vertical = Dimen.Padding)
                     .alpha(contentAlpha)
-                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
-                player = player,
-                expandedConfig = expandedConfig
+                    .align(Alignment.TopEnd),
+                player = player
             )
         } else {
             PortraitContent(
                 modifier = Modifier
-                    .alpha(contentAlpha)
-                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
-                player = player,
-                expandedConfig = expandedConfig
+                    .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
+                    .width(expandedConfig.expandedContentWidth)
+                    .fillMaxHeight()
+                    .padding(
+                        top = expandedConfig.expandedImagePadding.calculateTopPadding()
+                            .plus(expandedConfig.expandedImageSize)
+                            .plus(Dimen.PaddingDouble)
+                    )
+                    .alpha(contentAlpha),
+                player = player
             )
         }
     }
@@ -137,22 +147,9 @@ fun ExpandedPlayerBar(
 @Composable
 private fun LandscapeContent(
     modifier: Modifier = Modifier,
-    player: Player,
-    expandedConfig: ExpandedConfig
+    player: Player
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(
-                top = Dimen.Padding,
-                bottom = Dimen.Padding,
-                start = expandedConfig.expandedImageSize.plus(
-                    expandedConfig.expandedImagePadding
-                        .calculateStartPadding(LayoutDirection.Ltr)
-                ),
-                end = Dimen.PaddingDouble
-            )
-    ) {
+    Column(modifier = modifier) {
         Spacer(Modifier.weight(1F))
         TrackInfo(
             modifier = Modifier.padding(Dimen.PaddingDouble),
@@ -170,29 +167,22 @@ private fun LandscapeContent(
 @Composable
 private fun PortraitContent(
     modifier: Modifier = Modifier,
-    player: Player,
-    expandedConfig: ExpandedConfig
+    player: Player
 ) {
-    val padding = Dimen.PaddingDouble
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(
-                top = expandedConfig.expandedImagePadding
-                    .calculateTopPadding()
-                    .plus(expandedConfig.expandedImageSize)
-                    .plus(padding)
-            )
-    ) {
+    Column(modifier = modifier) {
         TrackInfo(
-            modifier = Modifier.padding(horizontal = padding),
+            modifier = Modifier.padding(horizontal = Dimen.PaddingDouble),
             player = player
         )
         Spacer(modifier = Modifier.weight(1F))
         PlayerControls(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(start = padding, end = padding, bottom = padding),
+                .padding(
+                    start = Dimen.PaddingDouble,
+                    end = Dimen.PaddingDouble,
+                    bottom = Dimen.PaddingDouble
+                ),
             player = player
         )
     }
@@ -324,33 +314,48 @@ fun expandedConfig(containerWidth: Dp, containerHeight: Dp): ExpandedConfig {
         )
     }
     val expandedImageSize = if (isLandscape) {
-        containerHeight.minus(
-            expandedImagePadding.calculateTopPadding()
-                .plus(expandedImagePadding.calculateBottomPadding())
+        containerHeight
+            .minus(expandedImagePadding.calculateTopPadding())
+            .minus(expandedImagePadding.calculateBottomPadding())
+    } else {
+        containerWidth
+            .minus(expandedImagePadding.calculateLeftPadding(LayoutDirection.Ltr))
+            .minus(expandedImagePadding.calculateRightPadding(LayoutDirection.Ltr))
+    }
+    val expandedImageX = if (isLandscape) {
+        leftPaddingLandscape.plus(
+            expandedWindowInsets.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
         )
     } else {
-        containerWidth.minus(
-            expandedImagePadding.calculateLeftPadding(LayoutDirection.Ltr)
-                .plus(expandedImagePadding.calculateRightPadding(LayoutDirection.Ltr))
-        )
+        containerWidth.div(2)
+            .minus(expandedImageSize.div(2))
+            .minus(expandedImagePadding.calculateLeftPadding(LayoutDirection.Ltr))
+    }
+    val expandedImageY = containerHeight.times(-1)
+        .plus(expandedImagePadding.calculateTopPadding())
+        .plus(expandedImageSize)
+    val contentWidth = if (isLandscape) {
+        containerWidth.minus(expandedImageSize)
+            .minus(
+                expandedWindowInsets.asPaddingValues()
+                    .calculateLeftPadding(LayoutDirection.Ltr)
+            )
+            .minus(
+                expandedWindowInsets.asPaddingValues()
+                    .calculateRightPadding(LayoutDirection.Ltr)
+            )
+            .minus(expandedImagePadding.calculateLeftPadding(LayoutDirection.Ltr))
+    } else {
+        containerWidth
     }
     return ExpandedConfig(
         isLandscape = isLandscape,
         expandedImagePadding = expandedImagePadding,
         expandedImageSize = expandedImageSize,
-        expandedImageX = if (isLandscape) {
-            leftPaddingLandscape.plus(
-                expandedWindowInsets.asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
-            )
-        } else {
-            containerWidth.div(2)
-                .minus(expandedImageSize.div(2))
-                .minus(expandedImagePadding.calculateLeftPadding(LayoutDirection.Ltr))
-        },
-        expandedImageY = containerHeight.times(-1)
-            .plus(expandedImagePadding.calculateTopPadding())
-            .plus(expandedImageSize),
-        expandedWindowInsets = expandedWindowInsets
+        expandedImageX = expandedImageX,
+        expandedImageY = expandedImageY,
+        expandedWindowInsets = expandedWindowInsets,
+        expandedContentWidth = contentWidth
     )
 }
 
