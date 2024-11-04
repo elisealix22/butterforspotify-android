@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,7 +35,7 @@ import com.elisealix22.butterforspotify.data.model.album.ReleaseDatePrecision
 import com.elisealix22.butterforspotify.data.model.artist.Artist
 import com.elisealix22.butterforspotify.player.MockPlayer
 import com.elisealix22.butterforspotify.player.Player
-import com.elisealix22.butterforspotify.player.PlayerBarHeight
+import com.elisealix22.butterforspotify.player.PlayerBarSpacer
 import com.elisealix22.butterforspotify.ui.UiMessage
 import com.elisealix22.butterforspotify.ui.UiState
 import com.elisealix22.butterforspotify.ui.UiStateScaffold
@@ -153,7 +152,7 @@ private fun MusicContent(
             }
         }
         item {
-            Spacer(modifier = Modifier.height(PlayerBarHeight))
+            PlayerBarSpacer()
         }
     }
 }

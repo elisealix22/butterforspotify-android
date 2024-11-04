@@ -18,24 +18,27 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.palette.graphics.Palette
 import coil3.asImage
 import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import coil3.imageLoader
 import coil3.memory.MemoryCache
 import coil3.request.ImageRequest
+import com.elisealix22.butterforspotify.PaletteCache
+import com.elisealix22.butterforspotify.cacheKey
 import com.elisealix22.butterforspotify.ui.theme.ButterForSpotifyTheme
 import com.elisealix22.butterforspotify.ui.theme.Dimen
 import com.elisealix22.butterforspotify.ui.theme.ThemeColor
 import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 import com.spotify.android.appremote.api.ImagesApi
 import com.spotify.protocol.types.Image
+import com.spotify.protocol.types.Image.Dimension
 import com.spotify.protocol.types.ImageUri
 import kotlin.random.Random
 
 private const val TAG = "AlbumImage"
 private val AlbumCornerSize = 2.dp
-
 private val FallbackColors = listOf(
     ThemeColor.Tangerine,
     ThemeColor.Orange,
@@ -67,29 +70,45 @@ fun AsyncAlbumImage(
     modifier: Modifier = Modifier,
     imagesApi: ImagesApi?,
     imageUri: ImageUri?,
-    imageDimension: Image.Dimension,
+    imageDimension: Dimension,
     contentDescription: String,
-    size: Dp
+    size: Dp,
+    onPaletteLoaded: (palette: Palette?) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val cacheKey = MemoryCache.Key("$imageUri:${imageDimension.value}")
     val image = remember(imageUri, imageDimension) {
-        mutableStateOf(context.imageLoader.memoryCache?.get(cacheKey)?.image)
+        mutableStateOf(
+            imageUri?.coilKey(imageDimension).let {
+                if (it == null) null else context.imageLoader.memoryCache?.get(it)?.image
+            }
+        )
     }
     val isError = remember { mutableStateOf(false) }
-    if (imageUri != null && imagesApi != null && image.value == null) {
+    if (imageUri != null && imagesApi != null) {
         LaunchedEffect(imageUri, imagesApi) {
-            Log.i(TAG, "Fetching bitmap: $imageUri")
-            isError.value = false
-            imagesApi.getImage(
-                imageUri,
-                imageDimension
-            ).setResultCallback { newBitmap ->
-                val newImage = newBitmap.asImage()
-                context.imageLoader.memoryCache?.set(cacheKey, MemoryCache.Value(newImage))
-                image.value = newImage
-            }.setErrorCallback {
-                isError.value = true
+            val cachedImage = image.value
+            val cachedPalette = PaletteCache.get(imageUri, imageDimension)
+            if (cachedImage == null || cachedPalette == null) {
+                Log.i(TAG, "Fetching bitmap: $imageUri")
+                isError.value = false
+                imagesApi.getImage(
+                    imageUri,
+                    imageDimension
+                ).setResultCallback { newBitmap ->
+                    val newPalette = Palette.from(newBitmap).generate()
+                    PaletteCache.put(imageUri, imageDimension, newPalette)
+                    onPaletteLoaded(newPalette)
+                    val newImage = newBitmap.asImage()
+                    context.imageLoader.memoryCache?.set(
+                        imageUri.coilKey(imageDimension),
+                        MemoryCache.Value(newImage)
+                    )
+                    image.value = newImage
+                }.setErrorCallback {
+                    isError.value = true
+                }
+            } else {
+                onPaletteLoaded(cachedPalette)
             }
         }
     }
@@ -100,7 +119,7 @@ fun AsyncAlbumImage(
         painter = rememberAsyncImagePainter(
             model = ImageRequest.Builder(context)
                 .data(image.value)
-                .memoryCacheKey(cacheKey)
+                .memoryCacheKey(imageUri?.coilKey(imageDimension))
                 .build(),
             error = if (isError.value) errorPainter() else placeholderPainter(),
             placeholder = placeholderPainter()
@@ -109,15 +128,16 @@ fun AsyncAlbumImage(
     )
 }
 
+private fun ImageUri.coilKey(imageDimension: Dimension): MemoryCache.Key =
+    MemoryCache.Key(this.cacheKey(imageDimension))
+
 @Composable
 private fun errorPainter(): Painter = ColorPainter(
     FallbackColors[Random.Default.nextInt(FallbackColors.size)]
 )
 
 @Composable
-private fun placeholderPainter(): Painter = ColorPainter(
-    Color.Transparent
-)
+private fun placeholderPainter(): Painter = ColorPainter(Color.Transparent)
 
 @ThemePreview
 @Composable

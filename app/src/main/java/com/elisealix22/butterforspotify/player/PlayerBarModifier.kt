@@ -1,42 +1,49 @@
 package com.elisealix22.butterforspotify.player
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitVerticalDragOrCancellation
 import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.elisealix22.butterforspotify.R
-import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 private val MaximumVelocity = Velocity(1F, 500F)
-private val AnimationSpec = SpringSpec<Float>(
+private val ExpandAnimationSpec = SpringSpec<Size>(
     dampingRatio = Spring.DampingRatioNoBouncy,
     stiffness = Spring.StiffnessMediumLow
+)
+private val CollapseAnimationSpec = SpringSpec<Size>(
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessMedium
 )
 
 @Serializable
@@ -45,76 +52,94 @@ enum class PlayerBarExpandState {
     Collapsed
 }
 
+fun PlayerBarExpandState.initialOffset(): Float = when (this) {
+    PlayerBarExpandState.Expanded -> 1F
+    PlayerBarExpandState.Collapsed -> 0F
+}
+
 @Composable
 fun Modifier.expandablePlayerBar(
+    collapsedHeight: Dp,
+    collapsedHorizontalPadding: Dp,
     containerWidth: Dp,
     containerHeight: Dp,
-    horizontalPadding: Dp,
     enabled: Boolean = true,
-    expandState: MutableState<PlayerBarExpandState> =
-        remember { mutableStateOf(PlayerBarExpandState.Collapsed) },
-    onExpandChange: (offset: Float) -> Unit = {}
+    expandState: PlayerBarExpandState = PlayerBarExpandState.Collapsed,
+    onExpandOffsetChange: (newOffset: Float) -> Unit
 ): Modifier {
-    val playerBarHeight = remember {
+    val leftInsetPadding = WindowInsets.safeDrawing
+        .asPaddingValues().calculateLeftPadding(LayoutDirection.Ltr)
+    val rightInsetPadding = WindowInsets.safeDrawing
+        .asPaddingValues().calculateRightPadding(LayoutDirection.Ltr)
+    val minPlayerBarWidth: Float = containerWidth.value
+        .minus(collapsedHorizontalPadding.times(2).value)
+        .plus(leftInsetPadding.value)
+        .plus(rightInsetPadding.value)
+    val maxPlayerBarWidth: Float = containerWidth.value
+    val playerBarSize = remember(collapsedHeight, containerHeight, minPlayerBarWidth) {
+        val lowerBound = Size(minPlayerBarWidth, collapsedHeight.value)
+        val upperBound = Size(maxPlayerBarWidth, containerHeight.value)
         Animatable(
-            if (expandState.value == PlayerBarExpandState.Expanded) {
-                containerHeight.value
+            if (expandState == PlayerBarExpandState.Expanded) {
+                upperBound
             } else {
-                PlayerBarHeight.value
-            }
+                lowerBound
+            },
+            Size.VectorConverter
         ).apply {
-            updateBounds(lowerBound = PlayerBarHeight.value, upperBound = containerHeight.value)
-        }
-    }
-    val minPlayerBarWidth = containerWidth.value - horizontalPadding.times(2).value
-    val playerBarWidth = remember {
-        derivedStateOf {
-            val offset = calculateExpandOffset(playerBarHeight.value.dp, containerHeight)
-            val expandableWidth = containerWidth.value - minPlayerBarWidth
-            minPlayerBarWidth + (offset * expandableWidth)
+            updateBounds(lowerBound = lowerBound, upperBound = upperBound)
         }
     }
     val scope = rememberCoroutineScope()
     val animateExpand: (expandUp: Boolean) -> Unit = { expandUp ->
         scope.launch {
             if (expandUp) {
-                playerBarHeight.stop()
-                playerBarHeight.animateTo(
-                    targetValue = playerBarHeight.upperBound ?: error("Upper bound not set"),
-                    animationSpec = AnimationSpec
+                playerBarSize.stop()
+                playerBarSize.animateTo(
+                    targetValue = playerBarSize.upperBound ?: error("Upper bound not set"),
+                    animationSpec = ExpandAnimationSpec
                 )
             } else {
-                playerBarHeight.stop()
-                playerBarHeight.animateTo(
-                    targetValue = playerBarHeight.lowerBound ?: error("Lower bound not set"),
-                    animationSpec = AnimationSpec
+                playerBarSize.stop()
+                playerBarSize.animateTo(
+                    targetValue = playerBarSize.lowerBound ?: error("Lower bound not set"),
+                    animationSpec = CollapseAnimationSpec
                 )
             }
         }
     }
-    LaunchedEffect(expandState.value) {
-        when (expandState.value) {
+    LaunchedEffect(expandState) {
+        when (expandState) {
             PlayerBarExpandState.Expanded -> {
-                if (!playerBarHeight.isExpanded()) animateExpand(true)
+                if (!playerBarSize.isExpanded()) animateExpand(true)
             }
             PlayerBarExpandState.Collapsed -> {
-                if (!playerBarHeight.isCollapsed()) animateExpand(false)
+                if (!playerBarSize.isCollapsed()) animateExpand(false)
             }
         }
     }
+
+    val expandOffset = remember(playerBarSize.value) {
+        val newExpandOffset = playerBarSize.calculateExpandOffset(containerHeight)
+        onExpandOffsetChange(newExpandOffset)
+        newExpandOffset
+    }
+
     return this
-        .size(width = playerBarWidth.value.dp, height = playerBarHeight.value.dp)
-        .onSizeChanged {
-            val expandOffset = calculateExpandOffset(playerBarHeight.value.dp, containerHeight)
-            expandState.value = if (expandOffset == 1F) {
-                PlayerBarExpandState.Expanded
-            } else {
-                PlayerBarExpandState.Collapsed
-            }
-            onExpandChange(expandOffset)
+        .size(
+            width = playerBarSize.value.width.dp,
+            height = playerBarSize.value.height.dp
+        )
+        .offset {
+            IntOffset(
+                x = 1F.minus(expandOffset).times(
+                    leftInsetPadding.div(2).value.minus(rightInsetPadding.div(2).value)
+                ).dp.roundToPx(),
+                y = 0
+            )
         }
         .clickable(
-            enabled = enabled && playerBarHeight.isCollapsed(),
+            enabled = enabled && playerBarSize.isCollapsed(),
             onClickLabel = stringResource(R.string.open_fullscreen_player),
             onClick = { animateExpand(true) },
             indication = null,
@@ -139,26 +164,39 @@ fun Modifier.expandablePlayerBar(
                             velocityTracker.addPointerInputChange(change)
                             isMovingUp = change.previousPosition.y > change.position.y
                             isDragging = change.previousPosition.y != change.position.y
-                            val changeDp = change.positionChange().y.toDp().value
-                            val targetValue = playerBarHeight.value - changeDp
+                            val changeDp = change.positionChange().y.toDp()
+                            val targetHeight = playerBarSize.value.height.dp - changeDp
                             change.consume()
                             launch {
-                                playerBarHeight.snapTo(targetValue)
+                                val availableHeight: Dp = containerHeight - collapsedHeight
+                                val traveledHeight: Dp = targetHeight - collapsedHeight
+                                val widthOffset = traveledHeight.div(availableHeight)
+                                val availableWidth = maxPlayerBarWidth - minPlayerBarWidth
+                                val targetWidth = minPlayerBarWidth + (widthOffset * availableWidth)
+                                playerBarSize.snapTo(
+                                    Size(targetWidth, targetHeight.value)
+                                )
                             }
                         }
                     }
-                    val endHeight = if (isMovingUp) {
-                        playerBarHeight.upperBound
+                    val endSize = if (isMovingUp) {
+                        playerBarSize.upperBound
                     } else {
-                        playerBarHeight.lowerBound
+                        playerBarSize.lowerBound
                     } ?: error("Player bar bounds not set.")
-                    val velocity = velocityTracker.calculateVelocity(MaximumVelocity).y
-                    if (isDragging && endHeight != playerBarHeight.value) {
+                    val velocity = velocityTracker.calculateVelocity(MaximumVelocity).let {
+                        Size(it.x, it.y)
+                    }
+                    if (isDragging && endSize != playerBarSize.value) {
                         launch {
-                            playerBarHeight.animateTo(
-                                targetValue = endHeight,
+                            playerBarSize.animateTo(
+                                targetValue = endSize,
                                 initialVelocity = velocity,
-                                animationSpec = AnimationSpec
+                                animationSpec = if (isMovingUp) {
+                                    ExpandAnimationSpec
+                                } else {
+                                    CollapseAnimationSpec
+                                }
                             )
                         }
                     }
@@ -170,16 +208,17 @@ fun Modifier.expandablePlayerBar(
 /**
  * @return Value between 0F and 1F where 0F is collapsed and 1F is expanded.
  */
-private fun calculateExpandOffset(playerBarHeight: Dp, containerHeight: Dp): Float {
-    val availableHeight = containerHeight.value - PlayerBarHeight.value
-    val traveledHeight = playerBarHeight.value - PlayerBarHeight.value
-    return traveledHeight.roundToInt() / availableHeight
+private fun Animatable<Size, AnimationVector2D>.calculateExpandOffset(containerHeight: Dp): Float {
+    val collapsedHeight: Dp = lowerBound?.height?.dp ?: return 0F
+    val availableHeight: Dp = containerHeight - collapsedHeight
+    val traveledHeight = value.height.dp - collapsedHeight
+    return traveledHeight.div(availableHeight)
 }
 
-private fun Animatable<Float, AnimationVector1D>.isExpanded(): Boolean {
-    return value == upperBound
+private fun Animatable<Size, AnimationVector2D>.isExpanded(): Boolean {
+    return value.height == upperBound?.height
 }
 
-private fun Animatable<Float, AnimationVector1D>.isCollapsed(): Boolean {
-    return value == lowerBound
+private fun Animatable<Size, AnimationVector2D>.isCollapsed(): Boolean {
+    return value.height == lowerBound?.height
 }

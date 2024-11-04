@@ -2,10 +2,14 @@ package com.elisealix22.butterforspotify.main
 
 import android.app.ActivityOptions
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +47,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        enableEdgeToEdge(
+            navigationBarStyle = if (isDark) {
+                SystemBarStyle.dark(scrim = Color.TRANSPARENT)
+            } else {
+                SystemBarStyle.light(scrim = Color.TRANSPARENT, darkScrim = Color.TRANSPARENT)
+            }
+        )
 
         setContent {
             ButterForSpotifyTheme {

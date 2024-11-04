@@ -2,12 +2,21 @@ package com.elisealix22.butterforspotify.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.fastFirst
 
 private const val NAVIGATION_TAG = "adaptiveNavigation"
@@ -16,26 +25,44 @@ private const val PLAYER_BAR_TAG = "adaptivePlayerBar"
 
 @Composable
 fun AdaptivePlayerBarLayout(
-    navigationSuite: @Composable () -> Unit,
+    navigationSuite: @Composable (bottomNavigationPadding: Dp) -> Unit,
     layoutType: NavigationSuiteType,
     content: @Composable () -> Unit = {},
-    playerBar: @Composable BoxScope.() -> Unit = {}
+    playerBar: @Composable BoxScope.(bottomNavigationPadding: Dp) -> Unit = {}
 ) {
+    val bottomNavigationPadding = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     Layout({
-        Box(Modifier.layoutId(NAVIGATION_TAG)) { navigationSuite() }
-        Box(Modifier.layoutId(CONTENT_TAG)) { content() }
-        Box(Modifier.fillMaxSize().layoutId(PLAYER_BAR_TAG)) { playerBar() }
+        Box(
+            modifier = Modifier
+                .layoutId(NAVIGATION_TAG)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Left))
+                .consumeWindowInsets(
+                    WindowInsets.safeDrawing
+                        .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
+                )
+        ) {
+            navigationSuite(bottomNavigationPadding)
+        }
+        Box(
+            modifier = Modifier
+                .layoutId(CONTENT_TAG)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Right))
+                .consumeWindowInsets(
+                    WindowInsets.safeDrawing
+                        .only(WindowInsetsSides.Horizontal.plus(WindowInsetsSides.Bottom))
+                )
+        ) {
+            content()
+        }
+        Box(Modifier.fillMaxSize().layoutId(PLAYER_BAR_TAG)) { playerBar(bottomNavigationPadding) }
     }) { measurables, constraints ->
-        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
-        val navigationPlaceable =
-            measurables
-                .fastFirst { it.layoutId == NAVIGATION_TAG }
-                .measure(looseConstraints)
+        val navigationPlaceable = measurables.fastFirst { it.layoutId == NAVIGATION_TAG }
+            .measure(constraints.copy(minWidth = 0, minHeight = 0))
         val playerBarPlaceable = measurables.fastFirst { it.layoutId == PLAYER_BAR_TAG }
-            .measure(looseConstraints)
-        val isNavigationBar = layoutType == NavigationSuiteType.NavigationBar
+            .measure(constraints.copy(minWidth = 0, minHeight = 0))
         val layoutHeight = constraints.maxHeight
         val layoutWidth = constraints.maxWidth
+        val isNavigationBar = layoutType == NavigationSuiteType.NavigationBar
         val contentPlaceable =
             measurables
                 .fastFirst { it.layoutId == CONTENT_TAG }
@@ -55,19 +82,19 @@ fun AdaptivePlayerBarLayout(
 
         layout(layoutWidth, layoutHeight) {
             if (isNavigationBar) {
-                contentPlaceable.placeRelative(x = 0, y = 0)
-                playerBarPlaceable.placeRelative(
+                contentPlaceable.place(x = 0, y = 0)
+                playerBarPlaceable.place(
                     x = 0,
                     y = layoutHeight - navigationPlaceable.height - playerBarPlaceable.height
                 )
-                navigationPlaceable.placeRelative(
+                navigationPlaceable.place(
                     x = 0,
                     y = layoutHeight - navigationPlaceable.height
                 )
             } else {
-                navigationPlaceable.placeRelative(x = 0, y = 0)
-                contentPlaceable.placeRelative(x = navigationPlaceable.width, y = 0)
-                playerBarPlaceable.placeRelative(x = 0, y = 0)
+                navigationPlaceable.place(x = 0, y = 0)
+                contentPlaceable.place(x = navigationPlaceable.width, y = 0)
+                playerBarPlaceable.place(x = 0, y = 0)
             }
         }
     }
