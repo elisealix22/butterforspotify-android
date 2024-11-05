@@ -1,15 +1,27 @@
 package com.elisealix22.butterforspotify.data.auth
 
+import android.util.Log
 import com.elisealix22.butterforspotify.data.BuildConfig
 import com.elisealix22.butterforspotify.data.SpotifyClient
 import com.elisealix22.butterforspotify.data.error.ServiceError
+import com.elisealix22.butterforspotify.data.model.user.User
+import com.squareup.moshi.adapter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import okhttp3.Credentials
 import okhttp3.FormBody
 import okhttp3.Request
 
 class AuthService {
+
+    companion object {
+        private const val TAG = "AuthService"
+    }
 
     /**
      * Fetches an auth token and refresh token from the Spotify Web API.
@@ -36,8 +48,10 @@ class AuthService {
             )
             .build()
         val authResponse = request.executeFetchTokens()
+        val user = fetchUserForToken(authResponse.accessToken).firstOrNull()
         try {
-            AuthStore.setActiveTokens(
+            AuthStore.setActiveUser(
+                userId = user?.id.orEmpty(),
                 accessToken = authResponse.accessToken,
                 refreshToken = authResponse.refreshToken.orEmpty()
             )
@@ -47,7 +61,60 @@ class AuthService {
         if (AuthStore.isAuthenticated) {
             emit(true)
         } else {
-            throw ServiceError.UnexpectedResponseError("Couldn't store tokens")
+            throw ServiceError.UnexpectedResponseError("Unauthenticated")
         }
+    }
+
+    @Throws(ServiceError::class)
+    suspend fun verifyAppRemoteUserSignedIn(appRemoteToken: String): Flow<User?> =
+        fetchUserForToken(appRemoteToken)
+            .flowOn(Dispatchers.IO)
+            .catch { error ->
+                Log.e(TAG, "Error verifying app remote token", error)
+                if (error !is ServiceError.IOError) {
+                    AuthStore.clearActiveTokens()
+                }
+            }
+            .map { user ->
+                val signedIn = AuthStore.isUserSignedIn(user)
+                if (signedIn) {
+                    Log.e(TAG, "App remote user is authenticated.")
+                    user
+                } else {
+                    Log.e(TAG, "App remote user is not signed in. Clearing tokens.")
+                    AuthStore.clearActiveTokens()
+                    null
+                }
+            }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Throws(ServiceError::class)
+    private suspend fun fetchUserForToken(appRemoteToken: String): Flow<User> = flow {
+        val request: Request = Request.Builder()
+            .url("${SpotifyClient.API_URL}me")
+            .header("Authorization", "Bearer $appRemoteToken")
+            .get()
+            .build()
+        val response = try {
+            SpotifyClient.unAuthenticatedHttpClient
+                .newCall(request)
+                .execute()
+        } catch (ex: Throwable) {
+            throw ServiceError.IOError(ex.message)
+        }
+        val responseBody = response.body?.string().orEmpty()
+        if (!response.isSuccessful) {
+            throw ServiceError.ApiError(
+                code = response.code,
+                loggingMessage = responseBody,
+                userFriendlyMessage = null
+            )
+        }
+        val user = try {
+            SpotifyClient.moshi.adapter<User>().fromJson(responseBody)
+        } catch (ex: Throwable) {
+            throw ServiceError.UnexpectedResponseError(ex.message)
+        } ?: throw ServiceError.UnexpectedResponseError("Error verifying user")
+        emit(user)
     }
 }

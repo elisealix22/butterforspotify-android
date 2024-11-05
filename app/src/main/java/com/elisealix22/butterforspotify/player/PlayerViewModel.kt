@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -106,6 +107,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     Log.d(TAG, "$APP_REMOTE_TAG channel completed")
                 }
                 .catch { error ->
+                    // TODO(elise): Handle different error states:
+                    // https://github.com/spotify/android-sdk/blob/master/app-remote-lib/ERRORS.md
                     Log.e(TAG, "Failed to connect to $APP_REMOTE_TAG", error)
                     spotifyAppRemote.value = UiState.Error(
                         data = null,
@@ -154,17 +157,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun subscribeToSpotifyPlayerState() {
-        val remote = spotifyAppRemote.value.data
-        if (remote == null) {
-            playerState.value = UiState.Error(
-                data = null,
-                message = IllegalStateException(
-                    "Can't subscribe to $PLAYER_STATE_TAG without $APP_REMOTE_TAG"
-                ).toUiErrorMessage(),
-                onTryAgain = { connect() }
-            )
-            return
-        }
+        val remote = spotifyAppRemote.value.data ?: return
         playerState.value = UiState.Loading(null)
         playerStateSubscription.value?.cancel()
         playerStateSubscription.value = remote.playerApi

@@ -24,7 +24,8 @@ import com.elisealix22.butterforspotify.ui.theme.ThemePreview
 
 @Composable
 fun MainScreen(
-    playerUiState: UiState<Player>
+    playerUiState: UiState<Player>,
+    refreshWebApiUser: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()

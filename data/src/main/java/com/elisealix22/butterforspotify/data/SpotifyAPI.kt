@@ -9,7 +9,6 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface SpotifyAPI {
-
     @GET("me/top/tracks")
     fun topTracks(
         @Query("time_range") timeRange: String,

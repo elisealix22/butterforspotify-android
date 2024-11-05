@@ -26,7 +26,7 @@ class SignInActivity : ComponentActivity() {
 
     companion object {
         // https://developer.spotify.com/documentation/web-api/concepts/scopes
-        private val scopes = arrayOf(
+        val scopes = arrayOf(
             "app-remote-control",
             "ugc-image-upload",
             "user-read-playback-state",

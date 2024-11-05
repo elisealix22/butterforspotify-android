@@ -58,7 +58,8 @@ internal class AuthInterceptor : Interceptor {
                 it.ifBlank { refreshToken }
             }
             runBlocking {
-                AuthStore.setActiveTokens(
+                AuthStore.setActiveUser(
+                    userId = AuthStore.activeUserId.orEmpty(),
                     accessToken = newAccessToken,
                     refreshToken = newRefreshToken
                 )

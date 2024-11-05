@@ -20,7 +20,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 internal object SpotifyClient {
 
-    private const val API_URL = "https://api.spotify.com/v1/"
+    internal const val API_URL = "https://api.spotify.com/v1/"
     internal const val TOKEN_URL = "https://accounts.spotify.com/api/token/"
 
     private val authenticatedHttpClient = OkHttpClient.Builder()
