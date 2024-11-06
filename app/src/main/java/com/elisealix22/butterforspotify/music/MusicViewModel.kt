@@ -40,19 +40,13 @@ class MusicViewModel : ViewModel() {
                         when (stack.category) {
                             StackCategory.TOP -> {
                                 AlbumShelf(
-                                    message = UiMessage.MessageResId(R.string.the_rotation),
+                                    message = UiMessage.MessageResId(R.string.your_rotation),
                                     albums = stack.albums
                                 )
                             }
                             StackCategory.RECENT -> {
                                 AlbumShelf(
                                     message = UiMessage.MessageResId(R.string.recently),
-                                    albums = stack.albums
-                                )
-                            }
-                            StackCategory.NEW -> {
-                                AlbumShelf(
-                                    message = UiMessage.MessageResId(R.string.new_releases),
                                     albums = stack.albums
                                 )
                             }

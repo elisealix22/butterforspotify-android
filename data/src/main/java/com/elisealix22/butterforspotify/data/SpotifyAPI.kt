@@ -1,6 +1,5 @@
 package com.elisealix22.butterforspotify.data
 
-import com.elisealix22.butterforspotify.data.model.album.NewReleasesResponse
 import com.elisealix22.butterforspotify.data.model.album.SavedAlbumResponse
 import com.elisealix22.butterforspotify.data.model.playlist.RecentlyPlayedResponse
 import com.elisealix22.butterforspotify.data.model.track.TopTracksResponse
@@ -20,11 +19,6 @@ interface SpotifyAPI {
     fun recentlyPlayed(
         @Query("limit") limit: Int
     ): Call<RecentlyPlayedResponse>
-
-    @GET("browse/new-releases")
-    fun newReleases(
-        @Query("limit") limit: Int
-    ): Call<NewReleasesResponse>
 
     @GET("me/albums")
     fun savedAlbums(
