@@ -1,6 +1,8 @@
 package com.elisealix22.butterforspotify.main
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,10 +53,14 @@ fun MainScreen(
                 MusicScreen(playerUiState = playerUiState)
             }
             composable<ButterRoute.Audio> {
-                Text(
-                    modifier = Modifier.padding(Dimen.Padding),
-                    text = "Episodes coming soon."
-                )
+                Scaffold { contentPadding ->
+                    Box(modifier = Modifier.padding(contentPadding)) {
+                        Text(
+                            modifier = Modifier.padding(Dimen.Padding),
+                            text = "Episodes coming soon"
+                        )
+                    }
+                }
             }
         }
     }
