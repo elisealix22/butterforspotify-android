@@ -31,7 +31,6 @@
 
     <!-- Music -->
     <string name="recently" comment="Recently played albums">Recently played</string>
-    <string name="the_rotation" comment="Your top albums">The rotation</string>
-    <string name="new_releases" comment="New album releases">Newish</string>
-    <string name="saved" comment="Saved albums">Saved</string>
+    <string name="your_rotation" comment="Your top albums">Your rotation</string>
+    <string name="saved" comment="Saved albums">Saved albums</string>
 </resources>

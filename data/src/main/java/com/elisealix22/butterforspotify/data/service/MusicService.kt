@@ -22,12 +22,9 @@ class MusicService {
         fetchTopAlbums()
             .zip(fetchRecentlyPlayed()) { top, recent ->
                 listOf(
-                    AlbumStack(StackCategory.TOP, top),
-                    AlbumStack(StackCategory.RECENT, recent)
+                    AlbumStack(StackCategory.RECENT, recent),
+                    AlbumStack(StackCategory.TOP, top)
                 )
-            }
-            .zip(fetchNewReleases()) { list, new ->
-                list + AlbumStack(StackCategory.NEW, new)
             }
             .zip(fetchSavedAlbums()) { list, saved ->
                 list + AlbumStack(StackCategory.SAVED, saved)
@@ -71,19 +68,6 @@ class MusicService {
             .topTracks(timeRange = timeRange.value, limit = 20)
             .fetchFromNetwork()
             .flowOn(Dispatchers.IO)
-
-    /**
-     * https://developer.spotify.com/documentation/web-api/reference/get-new-releases
-     */
-    @Throws(ServiceError::class)
-    private suspend fun fetchNewReleases(): Flow<List<Album>> =
-        SpotifyClient.api
-            .newReleases(limit = 20)
-            .fetchFromNetwork()
-            .flowOn(Dispatchers.IO)
-            .map {
-                it.albums.items
-            }
 
     /**
      * https://developer.spotify.com/documentation/web-api/reference/get-users-saved-albums

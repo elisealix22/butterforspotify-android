@@ -1,19 +1,16 @@
 package com.elisealix22.butterforspotify.music
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -75,7 +72,7 @@ private fun MusicUiScaffold(
     UiStateScaffold(
         uiState = uiState
     ) {
-        MusicContent(
+        PortraitMusicContent(
             items = uiState.data.orEmpty(),
             lazyListState = lazyListState,
             playerUiState = playerUiState
@@ -84,7 +81,7 @@ private fun MusicUiScaffold(
 }
 
 @Composable
-private fun MusicContent(
+private fun PortraitMusicContent(
     modifier: Modifier = Modifier,
     items: List<AlbumShelf>,
     lazyListState: LazyListState,
@@ -126,12 +123,10 @@ private fun MusicContent(
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyleFullscreen
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
+                LazyRow(
+                    modifier = Modifier.width(screenWidth)
                 ) {
-                    shelf.albums.forEachIndexed { index, album ->
+                    itemsIndexed(shelf.albums) { index, album ->
                         Album(
                             modifier = Modifier
                                 .padding(
@@ -236,7 +231,7 @@ fun MusicScreenPreview() {
         )
     )
     val uiState = UiState.Success(
-        data = listOf(AlbumShelf(UiMessage.MessageResId(R.string.the_rotation), albums))
+        data = listOf(AlbumShelf(UiMessage.MessageResId(R.string.your_rotation), albums))
     )
     ButterForSpotifyTheme {
         MusicUiScaffold(
