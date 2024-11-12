@@ -21,9 +21,6 @@ android {
     val spotifyProperties = Properties().apply {
         load(file("spotify.properties").reader())
     }
-    require(spotifyProperties.isNotEmpty()) {
-        "Missing 'spotify.properties' file"
-    }
     val spotifyClientId = spotifyProperties.getProperty("spotify_client_id")
     val spotifyClientSecret = spotifyProperties.getProperty("spotify_client_secret")
     val spotifyRedirectUri = spotifyProperties.getProperty("spotify_redirect_uri")
