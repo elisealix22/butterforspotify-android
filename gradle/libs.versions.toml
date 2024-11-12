@@ -1,6 +1,6 @@
 [versions]
 # Plugins
-agp = "8.6.1"
+agp = "8.7.2"
 kotlin = "2.0.20"
 serialization = "2.0.20"
 ktlint = "12.1.1"
@@ -21,7 +21,7 @@ retrofit = "2.11.0"
 moshi = "1.15.1"
 spotify-auth = "2.1.2"
 gson = "2.10.1" # Required for Spotify App Remote AAR
-coil = "3.0.0-rc01"
+coil = "3.0.2"
 
 [libraries]
 # Android
